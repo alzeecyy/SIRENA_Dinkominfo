@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Use Case Diagram (6 Aktor) - SIRENA Agendaris</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+        p {
+            color: #94a3b8;
+            margin-bottom: 24px;
+        }
+        .diagram-container {
+            background-color: #ffffff;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            width: 95%;
+            max-width: 1400px;
+            overflow-x: auto;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Use Case Diagram (6 Aktor Resmi) - SIRENA Agendaris</h1>
+    <p>Visualisasi Diagram Use Case Berdasarkan 6 Role Pengguna Aplikasi</p>
+
+    <div class="diagram-container">
+        <pre class="mermaid">
+graph TD
+    classDef actorStyle fill:#f8fafc,stroke:#334155,stroke-width:2px;
+    classDef generalUC fill:#eff6ff,stroke:#2563eb,stroke-width:1.5px,color:#1e3a8a;
+    classDef sekretarisUC fill:#fffbeb,stroke:#d97706,stroke-width:1.5px,color:#78350f;
+    classDef pimpinanUC fill:#f0fdf4,stroke:#16a34a,stroke-width:1.5px,color:#14532d;
+    classDef adminUC fill:#fef2f2,stroke:#dc2626,stroke-width:1.5px,color:#7f1d1d;
+    classDef kadinUC fill:#eef2ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81;
+
+    Admin["👤 Administrator<br/>(admin)"]:::actorStyle
+    Kadin["👤 Kepala Dinas<br/>(ketua_master)"]:::actorStyle
+    Sekdin["👤 Sekretaris Dinas<br/>(sekretaris_master)"]:::actorStyle
+    Kabid["👤 Kabid / Kasubag<br/>(ketua_bidang)"]:::actorStyle
+    Sekbid["👤 Admin Bidang/Subbag<br/>(sekretaris_bidang)"]:::actorStyle
+    Staff["👤 Staff Pegawai<br/>(staff)"]:::actorStyle
+
+    subgraph System ["Sistem Informasi Agendaris (SIRENA) Dinkominfo"]
+        UC1(["UC-01: Login Sistem"]):::generalUC
+        UC2(["UC-02: Ubah Password & Profil"]):::generalUC
+        UC3(["UC-03: Dashboard & Kalender"]):::generalUC
+        UC4(["UC-04: Agenda Hari Ini"]):::generalUC
+        UC5(["UC-05: Presensi Mandiri"]):::generalUC
+        UC6(["UC-06: Riwayat & Arsip Notulensi"]):::generalUC
+        UC7(["UC-07: Download PDF/DOCX"]):::generalUC
+
+        UC8(["UC-08: Kelola User & Akses (CRUD)"]):::adminUC
+        UC9(["UC-09: Kelola Master Data Bidang"]):::adminUC
+
+        UC10(["UC-10: Kelola Data Agenda (CRUD)"]):::sekretarisUC
+        UC11(["UC-11: Koreksi Presensi"]):::sekretarisUC
+        UC12(["UC-12: Edit Draft Notulensi"]):::sekretarisUC
+        UC13(["UC-13: Transkripsi Audio AI"]):::sekretarisUC
+        UC14(["UC-14: Peserta Eksternal"]):::sekretarisUC
+        UC15(["UC-15: Submit Review"]):::sekretarisUC
+
+        UC16(["UC-16: Review Notulensi"]):::pimpinanUC
+        UC17(["UC-17: Catat Revisi"]):::pimpinanUC
+        UC18(["UC-18: Approve Notulensi"]):::pimpinanUC
+        UC19(["UC-19: Monitoring Agenda Dinas"]):::kadinUC
+    end
+
+    %% Admin
+    Admin --- UC8
+    Admin --- UC9
+
+    %% Staff
+    Staff --- UC1
+    Staff --- UC2
+    Staff --- UC3
+    Staff --- UC4
+    Staff --- UC5
+    Staff --- UC6
+    Staff --- UC7
+
+    %% Admin Bidang
+    Sekbid --- UC10
+    Sekbid --- UC11
+    Sekbid --- UC12
+    Sekbid --- UC15
+
+    %% Sekdin
+    Sekdin --- UC10
+    Sekdin --- UC12
+    Sekdin --- UC18
+
+    %% Kabid
+    Kabid --- UC16
+    Kabid --- UC18
+
+    %% Kadin
+    Kadin --- UC19
+    Kadin --- UC6
+
+    %% Extends
+    UC13 -. "<<extend>>" .-> UC12
+    UC14 -. "<<extend>>" .-> UC12
+    UC17 -. "<<extend>>" .-> UC16
+        </pre>
+    </div>
+</body>
+</html>

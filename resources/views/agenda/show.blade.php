@@ -473,7 +473,7 @@
                         if ($isTranscribing) {
                             $notulenLabel = 'Proses Transkripsi';
                             $notulenColor = 'bg-sky-50 text-sky-600 border-sky-200';
-                        } elseif ($notulensi->transkrip_error) {
+                        } elseif ($notulensi->transkrip_error && empty(trim($notulensi->transkrip_raw ?? ''))) {
                             $notulenLabel = 'Gagal Transkripsi';
                             $notulenColor = 'bg-rose-50 text-rose-600 border-rose-200';
                         } elseif ($notulensi->status === 'disahkan') {
@@ -1504,10 +1504,11 @@
                     if (missingAdminBidangNames.length > 0) {
                         let msg = 'Pilih minimal 1 Admin dari unit yang diundang (' + missingAdminBidangNames.join(', ') + ').';
                         this.adminValidationErrorMessage = msg;
-                        this.formErrors.participants = msg;
+                        delete this.formErrors.participants;
+                        this.participantModalOpen = true;
                         this.$nextTick(() => {
-                            if (this.$refs.editFormContainer) {
-                                this.$refs.editFormContainer.scrollTo({ top: 9999, behavior: 'smooth' });
+                            if (this.$refs.modalBody) {
+                                this.$refs.modalBody.scrollTo({ top: 0, behavior: 'smooth' });
                             }
                         });
                         return false;
@@ -2283,6 +2284,23 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </div>
+
+                            <!-- Inline Validation Alert Banner inside Kelola Peserta Modal -->
+                            <template x-if="adminValidationErrorMessage">
+                                <div class="p-3 bg-amber-50 border-2 border-amber-400 text-amber-900 rounded-2xl text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <div class="p-1 bg-amber-200/80 rounded-lg shrink-0">
+                                            <svg class="w-4 h-4 text-amber-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                            </svg>
+                                        </div>
+                                        <span x-text="adminValidationErrorMessage" class="leading-tight"></span>
+                                    </div>
+                                    <button type="button" @click="adminValidationErrorMessage = ''" class="p-1 text-amber-700 hover:text-amber-950 hover:bg-amber-200/60 rounded-lg transition-all cursor-pointer shrink-0 ml-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </template>
 
                             <template x-if="bidangs.length === 0">
                                 <div class="p-6 text-center bg-amber-50/60 rounded-2xl border border-amber-200">
