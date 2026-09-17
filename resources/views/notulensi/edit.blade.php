@@ -345,12 +345,7 @@
 
                 <!-- AI Status Notification (Error or Complete) -->
                 @if(!empty($notulensi->audio_files) && count($notulensi->audio_files) > 0 && !$notulensi->is_transcribing)
-                    @if($notulensi->transkrip_error)
-                        <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl space-y-1 text-rose-800 text-[11px]">
-                            <span class="font-bold block">Gagal Transkripsi:</span>
-                            <p class="text-[10px] leading-relaxed">{{ $notulensi->transkrip_error }}</p>
-                        </div>
-                    @elseif(!empty($notulensi->transkrip_raw))
+                    @if(!empty(trim($notulensi->transkrip_raw ?? '')))
                         <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl space-y-2 text-blue-900 text-xs">
                             <div class="flex items-center justify-between text-[10px] font-bold text-blue-800">
                                 <span>Status Transkripsi:</span>
@@ -359,6 +354,11 @@
                             <p class="text-[10px] text-blue-700 leading-relaxed font-medium">
                                 Transkripsi selesai. Teks transkrip dan ringkasan dapat diperiksa di sebelah kiri.
                             </p>
+                        </div>
+                    @elseif($notulensi->transkrip_error)
+                        <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl space-y-1 text-rose-800 text-[11px]">
+                            <span class="font-bold block">Gagal Transkripsi:</span>
+                            <p class="text-[10px] leading-relaxed">{{ $notulensi->transkrip_error }}</p>
                         </div>
                     @endif
                 @endif

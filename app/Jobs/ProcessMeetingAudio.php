@@ -109,7 +109,7 @@ class ProcessMeetingAudio implements ShouldQueue
 
                             $audioBase64 = base64_encode(file_get_contents($audioFile));
 
-                            $sttResponse = Http::withoutVerifying()->timeout(120)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $apiKey, [
+                            $sttResponse = Http::withoutVerifying()->timeout(120)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" . $apiKey, [
                                 'contents' => [
                                     [
                                         'parts' => [
@@ -225,34 +225,28 @@ class ProcessMeetingAudio implements ShouldQueue
             }
 
             $prompt = "Role & Task:\n" .
-                      "Kamu adalah asisten eksekutif profesional yang bertugas mengolah, merapikan, dan menyusun ulang catatan/transkrip mentah dari pengguna menjadi dokumen notulensi rapat formal.\n\n" .
-                      "Strict Guardrails (Aturan Anti-Halusinasi & Faktual):\n" .
-                      "1. Faktual & Setia pada Teks: Hanya gunakan informasi yang secara eksplisit tertulis pada teks sumber. DILARANG MENAMBAHKAN asumsi, inferensi berlebihan, lokasi, nama platform, atau fakta baru yang tidak ada di teks.\n" .
-                      "2. Penanganan Istilah & Ambiguitas:\n" .
-                      "   - Jika ada informasi yang ambigu, membingungkan, atau tidak logis pada teks sumber (misal: \"rapat via gdrive\"), tuliskan apa adanya di bagian khusus atau kategorikan sebagai \"CATATAN & PERLU KLARIFIKASI\". JANGAN mencoba memperbaikinya dengan asumsi sendiri.\n" .
-                      "   - Khusus Transkrip Audio / Speech-to-Text (STT): Kamu diizinkan membetulkan kata-kata salah dengar/typo fonetik yang jelas dan berisiko rendah (contoh: \"kelala\" menjadi \"kelola\", \"tangga\" menjadi \"tanggal\"). Namun, jika istilah teknis atau nama peran tetap meragukan, pertahankan kata aslinya dan masukkan ke bagian clarification.\n" .
-                      "3. Eliminasi OOT: Buang percakapan santai, bercandaan, atau typo yang tidak relevan tanpa mengubah fakta inti dari poin utama.\n" .
-                      "4. Handling Data Kosong: Jika data seperti PIC, tenggat waktu, atau tanggal tidak disebutkan di teks sumber, tuliskan \"Tidak disebutkan\" secara eksplisit. Jangan menebak.\n\n" .
-                      "Output Formatting Guidelines (Standar Ekspor PDF):\n" .
-                      "1. NO CONVERSATIONAL PREFACE/OUTRO: Langsung berikan hasil akhir berupa dokumen Markdown. DILARANG menggunakan kalimat pembuka/pengantar (seperti \"Berikut adalah hasil...\", \"Ini notulensinya...\") maupun kalimat penutup/salam.\n" .
-                      "2. NO EMOJIS: Dilarang keras menggunakan emoji atau simbol emotikon apa pun dalam seluruh isi teks demi kebutuhan ekspor PDF.\n" .
-                      "3. Struktur Dokumen: Gunakan hirarki heading Markdown berikut secara konsisten:\n" .
-                      "   # RINGKASAN EKSEKUTIF RAPAT\n" .
-                      "   [Tuliskan 1-2 paragraf ringkasan eksekutif secara padat, faktual, dan profesional]\n\n" .
-                      "   # POIN-POIN PEMBAHASAN UTAMA\n" .
-                      "   1. **[Judul Topik/Bahasan Utama]**\n" .
-                      "      - Rincian pembahasan dan penjelasan yang disampaikan narasumber/peserta.\n\n" .
-                      "   # KEPUTUSAN & TINDAK LANJUT\n" .
-                      "   1. **[Keputusan/Kesepakatan Pertama]**: Penjelasan rincian keputusan atau langkah konkret yang disepakati. PIC: [Nama/Tidak disebutkan], Tenggat Waktu: [Tanggal/Tidak disebutkan].\n\n" .
-                      "   # CATATAN & PERLU KLARIFIKASI\n" .
-                      "   - [Tuliskan istilah ambigu/meragukan atau ketik 'Tidak ada' jika semua data sudah jelas].\n\n" .
-                      "Berikut teks sumber (transkrip / catatan mentah rapat):\n\n" . $combinedTranscript;
+                      "Kamu adalah asisten sekretaris eksekutif profesional yang bertugas mengolah, merapikan, dan menyusun ulang catatan/transkrip mentah rapat menjadi dokumen notulensi rapat formal yang rapi dan terstruktur.\n\n" .
+                      "Aturan Penting (Strict Rules):\n" .
+                      "1. Faktual: Hanya gunakan informasi dari teks sumber. Dilarang menambah asumsi atau informasi palsu.\n" .
+                      "2. Tanpa Pembuka/Penutup: Berikan LANGSUNG dokumen dalam format Markdown tanpa kata pengantar (seperti 'Berikut adalah...') dan tanpa salam penutup.\n" .
+                      "3. Dilarang Menggunakan Kurung Siku Placeholder: JANGAN menuliskan label seperti '[Judul Topik]', '[Nama/Tidak disebutkan]', atau '[Keputusan]'. Tuliskan langsung kalimat faktual dari isi rapat.\n" .
+                      "4. Tanpa Emoji: Dilarang menggunakan emoji atau simbol emotikon.\n" .
+                      "5. JANGAN menuliskan judul utama '# RINGKASAN EKSEKUTIF RAPAT' atau 'RINGKASAN EKSEKUTIF RAPAT' di paling atas karena judul utama dokumen sudah disediakan oleh sistem.\n\n" .
+                      "Struktur Output Markdown:\n" .
+                      "(Tuliskan paragraf ringkasan singkat rapat secara padat, faktual, dan profesional dalam 1-2 paragraf)\n\n" .
+                      "**A. POIN-POIN PEMBAHASAN UTAMA**\n" .
+                      "(Tuliskan poin-poin pembahasan utama rapat dalam bentuk daftar berurutan atau bullet points)\n\n" .
+                      "**B. KEPUTUSAN & TINDAK LANJUT**\n" .
+                      "(Tuliskan poin-poin keputusan rapat beserta PIC dan tenggat waktu jika disebutkan)\n\n" .
+                      "**C. CATATAN & PERLU KLARIFIKASI**\n" .
+                      "(Tuliskan istilah ambigu/meragukan atau tulis 'Tidak ada' jika semua jelas)\n\n" .
+                      "Teks Sumber Catatan Rapat:\n\n" . $combinedTranscript;
 
             // 1. Primary LLM Engine: Google Gemini API (Super fast response)
             if (!$summarized && $apiKey) {
                 try {
-                    Log::info("ProcessMeetingAudio: calling Primary LLM Engine (Gemini API) to summarize...");
-                    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $apiKey;
+                    Log::info("ProcessMeetingAudio: calling Primary LLM Engine (Gemini API 3.6 Flash) to summarize...");
+                    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" . $apiKey;
                     $responseSummary = Http::withoutVerifying()->timeout(120)->post($url, [
                         'contents' => [
                             [
@@ -264,8 +258,8 @@ class ProcessMeetingAudio implements ShouldQueue
                             ]
                         ],
                         'generationConfig' => [
-                            'temperature' => 0.1,
-                            'topP' => 0.2
+                            'temperature' => 0.3,
+                            'topP' => 0.9,
                         ]
                     ]);
                     
@@ -274,6 +268,7 @@ class ProcessMeetingAudio implements ShouldQueue
                         $sumText = $sumResult['candidates'][0]['content']['parts'][0]['text'] ?? null;
                         if ($sumText) {
                             $sumText = trim(preg_replace('/```(?:markdown)?/i', '', $sumText));
+                            $sumText = self::cleanRepetitiveLoops($sumText);
                             $this->notulensi->update([
                                 'transkrip_raw' => $combinedTranscript,
                                 'ringkasan' => $sumText,
@@ -309,8 +304,10 @@ class ProcessMeetingAudio implements ShouldQueue
                         'Content-Type' => 'application/json'
                     ])->post($url, [
                         'model' => $llmModel,
-                        'temperature' => 0.1,
-                        'top_p' => 0.2,
+                        'temperature' => 0.4,
+                        'top_p' => 0.9,
+                        'frequency_penalty' => 0.5,
+                        'presence_penalty' => 0.3,
                         'max_tokens' => 3000,
                         'messages' => [
                             [
@@ -325,6 +322,7 @@ class ProcessMeetingAudio implements ShouldQueue
                         $sumText = $resJson['choices'][0]['message']['content'] ?? null;
                         if ($sumText) {
                             $sumText = trim(preg_replace('/```(?:markdown)?/i', '', $sumText));
+                            $sumText = self::cleanRepetitiveLoops($sumText);
                             $this->notulensi->update([
                                 'transkrip_raw' => $combinedTranscript,
                                 'ringkasan' => $sumText,
@@ -456,16 +454,13 @@ class ProcessMeetingAudio implements ShouldQueue
             return '';
         }
 
-        $fillers = [
-            '/\bah\b/i', '/\beh\b/i', '/\boh\b/i', '/\bsih\b/i', '/\bkan\b/i', 
-            '/\bgitu\b/i', '/\bkayak\b/i', '/\bdong\b/i', '/\bdeh\b/i', 
-            '/\bkok\b/i', '/\byah\b/i', '/\bhehe\b/i', '/\bhihi\b/i', 
-            '/\buh\b/i', '/\bum\b/i', '/\beh-eh\b/i', '/\bya\b/i'
+        // Hapus hanya suara hening/interjeksi murni tanpa makna (tanpa mengganggu kata Bahasa Indonesia baku seperti 'ya', 'kan', 'gitu')
+        $rawFillers = [
+            '/\bhehe\b/i', '/\bhihi\b/i', '/\buh\b/i', '/\bum\b/i', '/\beh-eh\b/i'
         ];
-        $text = preg_replace($fillers, '', $text);
-        $text = preg_replace('/\b(\w+)(?:\s*,\s*\1\b)+/i', '$1', $text);
-        $text = preg_replace('/\b(\w+)(?:\s+\1\b)+/i', '$1', $text);
-        $text = preg_replace('/\b[b-hj-zB-HJ-Z]\b\s*/', '', $text);
+        $text = preg_replace($rawFillers, '', $text);
+
+        // Rapikan spasi, koma, dan titik berlebih tanpa menghapus kata ulang (seperti 'sama-sama', 'bapak-bapak', 'kira-kira') atau huruf tunggal
         $text = preg_replace('/\s+/', ' ', $text);
         $text = preg_replace('/\s*,\s*/', ', ', $text);
         $text = preg_replace('/\s*\.\s*/', '. ', $text);
@@ -484,5 +479,16 @@ class ProcessMeetingAudio implements ShouldQueue
         }
 
         return trim($text);
+    }
+
+    public static function cleanRepetitiveLoops(string $text): string
+    {
+        if (empty($text)) return '';
+
+        // Hapus pengulangan frasa berulang (misal "untuk mempertimbangkan untuk mempertimbangkan...")
+        $cleaned = preg_replace('/(?:\b(\w+(?:\s+\w+){0,9})\b)(?:\s+\1){2,}/iu', '$1', $text);
+        $cleaned = preg_replace('/(\b\w+\s+\w+\b)(?:\s+\1){2,}/iu', '$1', $cleaned);
+
+        return trim($cleaned);
     }
 }

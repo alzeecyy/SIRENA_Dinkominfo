@@ -299,15 +299,15 @@
                 @endphp
                 @if(Auth::user()->isAdmin())
                     <div x-data="{ openAdminMenu: false }" class="relative shrink-0 select-none">
-                        <button type="button" @click="openAdminMenu = !openAdminMenu" class="text-[#09103c] flex items-center gap-3 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-2xl border border-transparent hover:border-[#1b3bbb]/20 hover:bg-[#1b3bbb]/8 hover:shadow-md transition-all duration-300 text-right cursor-pointer focus:outline-none group">
-                            <div class="hidden sm:flex flex-col justify-center gap-0.5 text-right">
-                                <div class="text-xs sm:text-sm font-bold text-[#09103c] group-hover:text-[#1b3bbb] transition-colors leading-tight">{{ Auth::user()->name }}</div>
+                        <button type="button" @click="openAdminMenu = !openAdminMenu" class="text-[#09103c] flex items-center gap-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border border-transparent hover:border-[#1b3bbb]/20 hover:bg-[#1b3bbb]/8 hover:shadow-md transition-all duration-300 text-right cursor-pointer focus:outline-none group">
+                            <div class="hidden sm:flex flex-col justify-center gap-1 text-right items-end">
+                                <div class="text-xs sm:text-sm font-bold text-[#09103c] group-hover:text-[#1b3bbb] transition-colors leading-snug">{{ Auth::user()->name }}</div>
                                 <div>
-                                    <span class="inline-block text-[8.5px] sm:text-[9px] font-bold px-2 py-0.5 rounded-full border {{ $roleColors[Auth::user()->role] ?? 'bg-slate-100 border-slate-200 text-slate-700' }} uppercase tracking-wider">
+                                    <span class="inline-block text-[8.5px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full border {{ $roleColors[Auth::user()->role] ?? 'bg-slate-100 border-slate-200 text-slate-700' }} uppercase tracking-wider leading-snug">
                                         {{ Auth::user()->role_label }}
                                     </span>
                                 </div>
-                                <div class="text-[9.5px] sm:text-[10px] text-[#5a508f] font-semibold">NIP. {{ Auth::user()->nip }}</div>
+                                <div class="text-[9.5px] sm:text-[10px] text-[#5a508f] font-semibold leading-snug">NIP. {{ Auth::user()->nip }}</div>
                             </div>
                             <div class="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-[#1b3bbb]/10 rounded-xl md:rounded-2xl flex items-center justify-center font-bold text-[#1b3bbb] text-[10px] sm:text-xs md:text-sm border border-[#1b3bbb]/20 shadow-sm shrink-0 group-hover:bg-[#1b3bbb] group-hover:text-white transition-all">
                                 {{ substr(Auth::user()->name, 0, 2) }}
@@ -358,15 +358,15 @@
                 @else
                     <div class="relative shrink-0 select-none">
                         <a href="{{ route('profile') }}" 
-                           class="text-[#09103c] flex items-center gap-3 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-2xl border border-transparent hover:border-[#1b3bbb]/20 hover:bg-[#1b3bbb]/8 hover:shadow-md transition-all duration-300 text-right cursor-pointer group">
-                            <div class="hidden sm:flex flex-col justify-center gap-0.5 text-right">
-                                <div class="text-xs sm:text-sm font-bold text-[#09103c] group-hover:text-[#1b3bbb] transition-colors leading-tight">{{ Auth::user()->name }}</div>
+                           class="text-[#09103c] flex items-center gap-3 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border border-transparent hover:border-[#1b3bbb]/20 hover:bg-[#1b3bbb]/8 hover:shadow-md transition-all duration-300 text-right cursor-pointer group">
+                            <div class="hidden sm:flex flex-col justify-center gap-1 text-right items-end">
+                                <div class="text-xs sm:text-sm font-bold text-[#09103c] group-hover:text-[#1b3bbb] transition-colors leading-snug">{{ Auth::user()->name }}</div>
                                 <div>
-                                    <span class="inline-block text-[8.5px] sm:text-[9px] font-bold px-2 py-0.5 rounded-full border {{ $roleColors[Auth::user()->role] ?? 'bg-slate-100 border-slate-200 text-slate-700' }} uppercase tracking-wider">
+                                    <span class="inline-block text-[8.5px] sm:text-[9px] font-bold px-2.5 py-0.5 rounded-full border {{ $roleColors[Auth::user()->role] ?? 'bg-slate-100 border-slate-200 text-slate-700' }} uppercase tracking-wider leading-snug">
                                         {{ Auth::user()->role_label }}
                                     </span>
                                 </div>
-                                <div class="text-[9.5px] sm:text-[10px] text-[#5a508f] font-semibold">NIP. {{ Auth::user()->nip }}</div>
+                                <div class="text-[9.5px] sm:text-[10px] text-[#5a508f] font-semibold leading-snug">NIP. {{ Auth::user()->nip }}</div>
                             </div>
                             <div class="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-[#1b3bbb]/10 rounded-xl md:rounded-2xl flex items-center justify-center font-bold text-[#1b3bbb] text-[10px] sm:text-xs md:text-sm border border-[#1b3bbb]/20 shadow-sm shrink-0 group-hover:bg-[#1b3bbb] group-hover:text-white transition-all">
                                 {{ substr(Auth::user()->name, 0, 2) }}

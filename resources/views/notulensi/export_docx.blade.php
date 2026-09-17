@@ -272,23 +272,37 @@
         </tr>
     </table>
 
-    <!-- I. NOTULENSI RAPAT / RINGKASAN EKSEKUTIF -->
-    <div class="section-header" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-top: 22px; margin-bottom: 10px; color: #000000;">I. RINGKASAN EKSEKUTIF RAPAT</div>
+    @php
+        $romanMap = [1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI'];
+        $secIdx = 1;
+
+        $rawRingkasan = $notulensi->ringkasan ?? '';
+        $cleanRingkasanRaw = preg_replace('/^\s*#*\s*RINGKASAN\s+EKSEKUTIF\s+RAPAT\s*/i', '', $rawRingkasan);
+
+        if (!empty($notulensi->ringkasan_html)) {
+            $renderedRingkasan = preg_replace('/^\s*<h[1-6][^>]*>\s*RINGKASAN\s+EKSEKUTIF\s+RAPAT\s*<\/h[1-6]>\s*/i', '', $notulensi->ringkasan_html);
+        } else {
+            $renderedRingkasan = \Illuminate\Support\Str::markdown($cleanRingkasanRaw);
+        }
+    @endphp
+
+    <!-- NOTULENSI RAPAT / RINGKASAN EKSEKUTIF -->
+    <div class="section-header" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-top: 22px; margin-bottom: 10px; color: #000000;">{{ $romanMap[$secIdx++] }}. RINGKASAN EKSEKUTIF RAPAT</div>
     <div class="section-body" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: normal; color: #000000; line-height: 1.5;">
-        {!! $notulensi->ringkasan_html ?? \Illuminate\Support\Str::markdown($notulensi->ringkasan ?? '-') !!}
+        {!! $renderedRingkasan !!}
     </div>
 
-    <!-- II. POIN-POIN PEMBAHASAN UTAMA -->
+    <!-- POIN-POIN PEMBAHASAN UTAMA -->
     @if(!empty($notulensi->pembahasan))
-        <div class="section-header" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-top: 22px; margin-bottom: 10px; color: #000000;">II. {{ mb_strtoupper($notulensi->pembahasan_title ?? 'POIN-POIN PEMBAHASAN UTAMA') }}</div>
+        <div class="section-header" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-top: 22px; margin-bottom: 10px; color: #000000;">{{ $romanMap[$secIdx++] }}. {{ mb_strtoupper($notulensi->pembahasan_title ?? 'POIN-POIN PEMBAHASAN UTAMA') }}</div>
         <div class="section-body" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: normal; color: #000000; line-height: 1.5;">
             {!! $notulensi->pembahasan_html ?? \Illuminate\Support\Str::markdown($notulensi->pembahasan) !!}
         </div>
     @endif
 
-    <!-- III. HASIL KEPUTUSAN & TINDAK LANJUT -->
+    <!-- HASIL KEPUTUSAN & TINDAK LANJUT -->
     @if(!empty($notulensi->keputusan) || !empty($notulensi->kesimpulan))
-        <div class="section-header" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-top: 22px; margin-bottom: 10px; color: #000000;">III. {{ mb_strtoupper($notulensi->keputusan_title ?? 'HASIL KEPUTUSAN & TINDAK LANJUT') }}</div>
+        <div class="section-header" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-top: 22px; margin-bottom: 10px; color: #000000;">{{ $romanMap[$secIdx++] }}. {{ mb_strtoupper($notulensi->keputusan_title ?? 'HASIL KEPUTUSAN & TINDAK LANJUT') }}</div>
         <div class="section-body" style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; font-weight: normal; color: #000000; line-height: 1.5;">
             @if(!empty($notulensi->keputusan))
                 {!! $notulensi->keputusan_html ?? \Illuminate\Support\Str::markdown($notulensi->keputusan) !!}
@@ -302,8 +316,8 @@
         </div>
     @endif
 
-    <!-- IV. DAFTAR HADIR PESERTA RAPAT -->
-    <div class="section-header">IV. DAFTAR HADIR PESERTA RAPAT</div>
+    <!-- DAFTAR HADIR PESERTA RAPAT -->
+    <div class="section-header">{{ $romanMap[$secIdx++] }}. DAFTAR HADIR PESERTA RAPAT</div>
     <table class="table-data">
         <thead>
             <tr>
@@ -348,9 +362,9 @@
         </tbody>
     </table>
 
-    <!-- V. REKAPITULASI PRESENSI INTERNAL PER BIDANG -->
+    <!-- REKAPITULASI PRESENSI INTERNAL PER BIDANG -->
     @if(!empty($recap))
-        <div class="section-header">V. REKAPITULASI PRESENSI INTERNAL PER BIDANG</div>
+        <div class="section-header">{{ $romanMap[$secIdx++] }}. REKAPITULASI PRESENSI INTERNAL PER BIDANG</div>
         <table class="table-data" style="width: 75%;">
             <thead>
                 <tr>
