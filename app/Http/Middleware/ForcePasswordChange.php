@@ -16,6 +16,15 @@ class ForcePasswordChange
     {
         if (Auth::check()) {
             $user = Auth::user();
+
+            if (!$user->active) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect()->route('login')
+                    ->withErrors(['nip' => 'Akun Anda telah dinonaktifkan oleh administrator.']);
+            }
+
             if ($user->must_change_password && !$request->routeIs('password.change') && !$request->routeIs('password.update') && !$request->routeIs('logout')) {
                 return redirect()->route('password.change')
                     ->with('warning', 'Anda wajib mengganti password bawaan saat pertama kali masuk ke sistem.');
