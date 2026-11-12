@@ -181,26 +181,32 @@
             color: #000000 !important;
         }
 
-        /* Data Tables (11 pt, Border tipis hitam) */
+        /* Data Tables (Border tipis hitam, Table-layout fixed to strictly stay within page margins) */
         .table-data {
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
             margin-bottom: 20px;
+            table-layout: fixed;
         }
         .table-data th, .table-data td {
             border: 1px solid #000000;
-            padding: 5px 7px;
-            font-size: 11pt;
+            padding: 5px 6px;
+            font-size: 9.5pt;
             color: #000000;
             vertical-align: middle;
-            line-height: 1.3;
+            line-height: 1.25;
+            word-wrap: break-word;
+            word-break: break-all;
+            overflow: hidden;
         }
         .table-data th {
             background-color: #f2f2f2;
             font-weight: bold;
             text-align: center;
             text-transform: uppercase;
+            font-size: 9pt;
+            letter-spacing: 0.3px;
         }
 
         /* Signature / Pengesahan */
@@ -308,10 +314,10 @@
         <thead>
             <tr>
                 <th style="width: 5%; text-align: center;">No</th>
-                <th style="width: 38%;">Nama Peserta / NIP</th>
-                <th style="width: 25%; text-align: center;">Jabatan / Unit Kerja</th>
-                <th style="width: 12%; text-align: center;">Status</th>
-                <th style="width: 20%; text-align: center;">Tanda Tangan / Ket.</th>
+                <th style="width: 31%;">Nama Peserta / NIP</th>
+                <th style="width: 31%; text-align: center;">Jabatan / Unit Kerja</th>
+                <th style="width: 11%; text-align: center;">Status</th>
+                <th style="width: 22%; text-align: center;">Tanda Tangan / Ket.</th>
             </tr>
         </thead>
         <tbody>
@@ -319,28 +325,35 @@
             @foreach($attendees as $att)
                 <tr>
                     <td style="text-align: center;">{{ $no++ }}</td>
-                    <td>
-                        <strong>{{ $att->nama }}</strong>
+                    <td style="word-break: normal; overflow-wrap: break-word;">
+                        <strong style="font-size: 9.5pt;">{{ $att->nama }}</strong>
                         @if($att->nip && $att->nip !== '-')
-                            <br><span style="font-size: 9.5pt;">NIP. {{ $att->nip }}</span>
+                            <br><span style="font-size: 8.5pt; color: #333333;">NIP. {{ $att->nip }}</span>
                         @endif
                     </td>
-                    <td style="text-align: center;">{{ $att->jabatan }} - {{ $att->bidang }}</td>
-                    <td style="text-align: center; font-weight: bold;">{{ $att->status }}</td>
-                    <td style="text-align: center;">
+                    <td style="text-align: center; font-size: 9pt; word-break: normal; overflow-wrap: break-word;">
+                        <div>{{ $att->jabatan }}</div>
+                        @if(!empty($att->bidang) && !str_contains(strtolower($att->jabatan), strtolower($att->bidang)))
+                            <div style="font-size: 8pt; color: #444444; margin-top: 1px;">({{ $att->bidang }})</div>
+                        @endif
+                    </td>
+                    <td style="text-align: center; font-weight: bold; font-size: 9pt;">{{ $att->status }}</td>
+                    <td style="text-align: center; font-size: 8.5pt; word-wrap: break-word; word-break: break-all;">
                         @if($att->status === 'Hadir' && $att->tanda_tangan)
                             @php
                                 $sigPath = public_path('storage/' . $att->tanda_tangan);
                             @endphp
                             @if(file_exists($sigPath))
-                                <img src="{{ $sigPath }}" alt="TTD" style="max-height: 25px; max-width: 90px; display: block; margin: 0 auto;">
+                                <img src="{{ $sigPath }}" alt="TTD" style="max-height: 25px; max-width: 80px; display: block; margin: 0 auto;">
                             @else
-                                <span style="font-size: 9pt; font-style: italic;">[TTD Terverifikasi]</span>
+                                <span style="font-size: 8pt; font-style: italic; color: #166534;">[TTD Terverifikasi]</span>
                             @endif
-                        @elseif($att->status === 'Izin' && $att->keterangan)
-                            <span style="font-size: 9pt; font-style: italic;">{{ $att->keterangan }}</span>
+                        @elseif(in_array($att->status, ['Izin', 'Sakit']) && $att->keterangan)
+                            <div style="font-size: 8pt; font-style: italic; text-align: left; line-height: 1.2; word-wrap: break-word; word-break: break-all; padding: 1px 2px;">
+                                {{ $att->keterangan }}
+                            </div>
                         @else
-                            <span>-</span>
+                            <span style="color: #666666;">-</span>
                         @endif
                     </td>
                 </tr>

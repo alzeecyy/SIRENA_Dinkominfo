@@ -37,8 +37,21 @@ class PresensiController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|in:hadir,izin,sakit',
-            'keterangan' => 'nullable|string|max:500',
+            'keterangan' => 'required_if:status,izin,sakit|nullable|string|max:500',
             'signature' => 'required_if:status,hadir|nullable|string',
+            'surat_dokter' => 'exclude_unless:status,sakit|required|file|mimes:pdf,jpg,jpeg,png|max:3072',
+            'surat_izin' => 'exclude_unless:status,izin|required|file|mimes:pdf,jpg,jpeg,png|max:3072',
+        ], [
+            'signature.required_if' => 'Tanda tangan digital wajib diisi untuk status Hadir.',
+            'keterangan.required_if' => 'Alasan / keterangan wajib diisi jika memilih status Izin atau Sakit.',
+            'surat_dokter.required' => 'Surat keterangan / bukti dokter wajib dilampirkan jika memilih status Sakit.',
+            'surat_dokter.file' => 'Surat dokter harus berupa file dokumen atau foto.',
+            'surat_dokter.mimes' => 'Format file surat dokter harus PDF, JPG, JPEG, atau PNG.',
+            'surat_dokter.max' => 'Ukuran file surat dokter maksimal 3MB.',
+            'surat_izin.required' => 'Surat / bukti izin wajib dilampirkan jika memilih status Izin.',
+            'surat_izin.file' => 'Surat izin harus berupa file dokumen atau foto.',
+            'surat_izin.mimes' => 'Format file surat izin harus PDF, JPG, JPEG, atau PNG.',
+            'surat_izin.max' => 'Ukuran file surat izin maksimal 3MB.',
         ]);
 
         // Check if already checked in
@@ -77,6 +90,15 @@ class PresensiController extends Controller
             }
         }
 
+        // Handle file upload for surat sakit / izin
+        $suratPath = null;
+        $uploadedFile = $request->file('surat_dokter') ?? $request->file('surat_izin');
+        if ($uploadedFile && in_array($validated['status'], ['sakit', 'izin'])) {
+            $ext = $uploadedFile->getClientOriginalExtension();
+            $filename = 'surat_' . $validated['status'] . '_' . $agenda->id . '_' . $user->id . '_' . time() . '.' . $ext;
+            $suratPath = $uploadedFile->storeAs('presensi/surat_izin', $filename, 'public');
+        }
+
         // Save presence safely against double-click race conditions
         try {
             Presensi::create([
@@ -85,6 +107,7 @@ class PresensiController extends Controller
                 'status' => $validated['status'],
                 'tanda_tangan' => $signaturePath,
                 'keterangan' => $validated['keterangan'] ?? null,
+                'surat_izin' => $suratPath,
             ]);
         } catch (\Illuminate\Database\QueryException $e) {
             return back()->with('error', 'Presensi Anda telah tercatat.');

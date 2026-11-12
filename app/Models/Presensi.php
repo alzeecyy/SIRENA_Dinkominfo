@@ -18,6 +18,7 @@ class Presensi extends Model
         'status',
         'tanda_tangan',
         'keterangan',
+        'surat_izin',
     ];
 
     public function agenda(): BelongsTo

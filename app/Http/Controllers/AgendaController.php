@@ -331,6 +331,7 @@ class AgendaController extends Controller
             $employee->status_presensi = $status;
             $employee->tanda_tangan = $record ? $record->tanda_tangan : null;
             $employee->keterangan = $record ? $record->keterangan : null;
+            $employee->surat_izin = $record ? $record->surat_izin : null;
             return $employee;
         });
 

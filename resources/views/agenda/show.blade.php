@@ -298,10 +298,33 @@
                             <div class="w-full text-center py-2.5 sm:py-3 border rounded-xl text-xs font-bold {{ $statusColors[$ownPresensi->status] }}">
                                 {{ $statusLabels[$ownPresensi->status] }}
                             </div>
-                            @if($ownPresensi->keterangan)
-                                <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3 text-xs">
-                                    <span class="block font-bold text-[#2e2552] uppercase text-[9px] tracking-wider mb-1">Catatan Keterangan:</span>
-                                    <p class="text-slate-700 leading-relaxed">{{ $ownPresensi->keterangan }}</p>
+                            @if($ownPresensi->keterangan || $ownPresensi->surat_izin)
+                                <div class="bg-slate-50/80 border border-[#d4d1f5]/60 rounded-2xl p-3.5 text-xs space-y-2.5">
+                                    @if($ownPresensi->keterangan)
+                                        <div>
+                                            <span class="block font-bold text-[#5a508f] uppercase text-[9px] tracking-wider mb-1">Catatan Keterangan:</span>
+                                            <p class="text-[#2e2552] font-medium leading-relaxed break-words break-all">{{ $ownPresensi->keterangan }}</p>
+                                        </div>
+                                    @endif
+
+                                    @if($ownPresensi->surat_izin)
+                                        <div class="{{ $ownPresensi->keterangan ? 'pt-2.5 border-t border-[#d4d1f5]/40' : '' }} flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                            <div class="min-w-0">
+                                                <span class="block font-bold text-[#5a508f] uppercase text-[9px] tracking-wider mb-0.5">Surat / Bukti Lampiran:</span>
+                                                <span class="text-[#2e2552] text-xs font-bold block">
+                                                    {{ $ownPresensi->status === 'sakit' ? 'Surat Keterangan Dokter' : 'Surat Keterangan Izin' }}
+                                                </span>
+                                            </div>
+                                            <a href="{{ asset('storage/' . $ownPresensi->surat_izin) }}" target="_blank" 
+                                               class="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto px-3.5 py-2 sm:py-1.5 bg-[#1b3bbb]/10 hover:bg-[#1b3bbb]/20 text-[#1b3bbb] hover:text-[#09103c] border border-[#1b3bbb]/30 rounded-xl text-xs font-bold transition-all shadow-2xs shrink-0 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                                <span>Lihat Dokumen</span>
+                                            </a>
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
                             @if($ownPresensi->tanda_tangan)
@@ -740,6 +763,19 @@
                                             <div class="min-w-0 flex-1">
                                                 <div class="text-xs font-bold text-[#2e2552] truncate" title="{{ $part->name }}">{{ $part->name }}</div>
                                                 <div class="text-[10px] text-[#5a508f] truncate font-medium mt-0.5" title="{{ $part->jabatan }}">{{ $part->jabatan }}</div>
+                                                @if($part->keterangan || $part->surat_izin)
+                                                    <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                                        @if($part->keterangan)
+                                                            <span class="text-[10px] text-slate-500 italic truncate max-w-[140px]" title="{{ $part->keterangan }}">"{{ $part->keterangan }}"</span>
+                                                        @endif
+                                                        @if($part->surat_izin)
+                                                            <a href="{{ asset('storage/' . $part->surat_izin) }}" target="_blank" class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-[9px] font-bold transition-colors">
+                                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                                                Surat Bukti
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                             @if(Auth::user()->isAdmin() || $isSecretaryOfAgenda)
                                                 <div x-data="{ currentStatus: '{{ $part->status_presensi ?: 'Belum Absen' }}', openStatus: false, isLoading: false }" @click.outside="openStatus = false" class="relative shrink-0">
@@ -1051,8 +1087,8 @@
 
     <!-- DETAIL MODAL FOR ATTENDEES TABLE -->
     @if(Auth::user()->role !== 'staff' || Auth::user()->isSekretariat())
-    <div x-show="openDetailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm">
-        <div @click.away="openDetailModal = false" class="bg-white border border-[#d4d1f5]/60 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden relative text-[#2e2552]">
+    <div x-show="openDetailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/50 backdrop-blur-sm overflow-y-auto">
+        <div @click.away="openDetailModal = false" class="bg-white border border-[#d4d1f5]/60 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden relative text-[#2e2552] my-auto max-h-[90vh] flex flex-col">
             <div class="px-5 py-3.5 sm:py-4 bg-gradient-to-r from-[#09103c] via-[#1b3bbb] to-[#09103c] text-white flex items-center justify-between shrink-0 rounded-t-3xl">
                 <div>
                     <h3 class="text-sm sm:text-base font-extrabold text-white">Detail Kehadiran Rapat</h3>
@@ -1065,55 +1101,134 @@
                 </button>
             </div>
 
-            <div class="p-6 max-h-[60vh] overflow-y-auto">
-                <table class="w-full text-left text-xs text-[#2e2552]">
-                    <thead class="bg-[#ebf2ff] text-[#1b3bbb] border-y border-[#bfd5ff] select-none">
-                        <tr>
-                            <th class="py-2.5 px-3 font-black uppercase tracking-wider">Nama Pegawai</th>
-                            <th class="py-2.5 px-3 font-black uppercase tracking-wider">Jabatan</th>
-                            <th class="py-2.5 px-3 font-black uppercase tracking-wider text-center">Status</th>
-                            <th class="py-2.5 px-3 font-black uppercase tracking-wider">Keterangan</th>
-                            <th class="py-2.5 px-3 font-black uppercase tracking-wider text-center">TTD</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-[#d4d1f5]/20">
-                        <template x-for="p in detailParticipants" :key="p.id">
-                            <tr class="hover:bg-[#f8f7ff] transition-colors">
-                                <td class="py-3 px-3 font-bold">
-                                    <div x-text="p.name"></div>
-                                    <div class="font-mono text-[9px] text-[#5a508f] mt-0.5" x-text="p.nip"></div>
-                                </td>
-                                <td class="py-3 px-3 text-slate-700" x-text="p.jabatan"></td>
-                                <td class="py-3 px-3 text-center font-bold">
-                                    <span class="inline-block px-2 py-0.5 rounded-lg border text-[9px] uppercase tracking-wider font-extrabold"
-                                          :class="{
-                                              'bg-emerald-50 text-emerald-600 border-emerald-200': p.status_presensi === 'hadir',
-                                              'bg-amber-50 text-amber-600 border-amber-200': p.status_presensi === 'izin',
-                                              'bg-rose-50 text-rose-600 border-rose-200': p.status_presensi === 'sakit',
-                                              'bg-red-50 text-red-600 border-red-200': p.status_presensi === 'alfa',
-                                              'bg-slate-100 text-slate-400 border-slate-200': p.status_presensi === 'Belum Absen'
-                                          }"
-                                          x-text="p.status_presensi === 'Belum Absen' ? 'Belum Absen' : (p.status_presensi === 'alfa' ? 'Alfa' : p.status_presensi)">
-                                    </span>
-                                </td>
-                                <td class="py-3 px-3 text-slate-500 italic text-[11px]" x-text="p.keterangan || '-'"></td>
-                                <td class="py-2 px-3 text-center">
+            <div class="max-h-[65vh] overflow-y-auto overflow-x-hidden flex-1">
+                <!-- 1. Tampilan Desktop & Tablet (Layar >= 640px) -->
+                <div class="hidden sm:block">
+                    <table class="w-full table-fixed text-left text-xs text-[#2e2552]">
+                        <thead class="bg-[#ebf2ff] text-[#1b3bbb] border-y border-[#bfd5ff] select-none sticky top-0 z-10 shadow-2xs">
+                            <tr>
+                                <th class="w-[28%] py-3 px-3.5 font-black uppercase tracking-wider">Nama Pegawai</th>
+                                <th class="w-[22%] py-3 px-3 font-black uppercase tracking-wider">Jabatan</th>
+                                <th class="w-[14%] py-3 px-2 font-black uppercase tracking-wider text-center">Status</th>
+                                <th class="w-[26%] py-3 px-3.5 font-black uppercase tracking-wider">Keterangan / Berkas</th>
+                                <th class="w-[10%] py-3 px-2 font-black uppercase tracking-wider text-center">TTD</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#d4d1f5]/20">
+                            <template x-for="p in detailParticipants" :key="'dt-' + p.id">
+                                <tr class="hover:bg-[#f8f7ff] transition-colors">
+                                    <td class="py-3 px-3.5 font-bold align-top">
+                                        <div class="truncate" :title="p.name" x-text="p.name"></div>
+                                        <div class="font-mono text-[9px] text-[#5a508f] mt-0.5 truncate" x-text="p.nip"></div>
+                                    </td>
+                                    <td class="py-3 px-3 text-slate-700 align-top">
+                                        <div class="line-clamp-2" :title="p.jabatan" x-text="p.jabatan"></div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-bold align-top">
+                                        <span class="inline-block px-2 py-0.5 rounded-lg border text-[9px] uppercase tracking-wider font-extrabold"
+                                              :class="{
+                                                  'bg-emerald-50 text-emerald-600 border-emerald-200': p.status_presensi === 'hadir',
+                                                  'bg-amber-50 text-amber-600 border-amber-200': p.status_presensi === 'izin',
+                                                  'bg-rose-50 text-rose-600 border-rose-200': p.status_presensi === 'sakit',
+                                                  'bg-red-50 text-red-600 border-red-200': p.status_presensi === 'alfa',
+                                                  'bg-slate-100 text-slate-400 border-slate-200': p.status_presensi === 'Belum Absen'
+                                              }"
+                                              x-text="p.status_presensi === 'Belum Absen' ? 'Belum Absen' : (p.status_presensi === 'alfa' ? 'Alfa' : p.status_presensi)">
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-3.5 text-slate-600 text-[11px] align-top">
+                                        <div class="italic break-words break-all leading-snug" :title="p.keterangan" x-text="p.keterangan || '-'"></div>
+                                        <template x-if="p.surat_izin">
+                                            <div class="mt-1.5">
+                                                <a :href="'/storage/' + p.surat_izin" target="_blank" 
+                                                   class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-[#1b3bbb] border border-blue-200 hover:border-blue-300 rounded-lg text-[10px] font-bold not-italic transition-all shadow-2xs">
+                                                    <svg class="w-3 h-3 text-[#1b3bbb] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    <span>Lihat Bukti</span>
+                                                </a>
+                                            </div>
+                                        </template>
+                                    </td>
+                                    <td class="py-2.5 px-2 text-center align-top">
+                                        <template x-if="p.tanda_tangan">
+                                            <div class="inline-flex items-center justify-center p-1 bg-white border border-slate-200 rounded-lg h-9 w-14 overflow-hidden shadow-xs mx-auto">
+                                                <img :src="'/storage/' + p.tanda_tangan" alt="TTD" class="max-h-full max-w-full object-contain">
+                                            </div>
+                                        </template>
+                                        <template x-if="!p.tanda_tangan">
+                                            <span class="text-slate-400">-</span>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="detailParticipants.length === 0">
+                                <td colspan="5" class="py-6 text-center text-[#8e88dd] italic font-medium">Tidak ada pegawai terdaftar di bidang ini.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 2. Tampilan Kartu Khusus Mobile (Layar < 640px) -->
+                <div class="block sm:hidden p-3.5 space-y-3">
+                    <template x-for="p in detailParticipants" :key="'mb-' + p.id">
+                        <div class="bg-slate-50/90 border border-[#d4d1f5]/70 rounded-2xl p-3 space-y-2.5 shadow-2xs">
+                            <!-- Baris Atas: Nama & Status -->
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold text-xs text-[#09103c] truncate" x-text="p.name"></div>
+                                    <div class="font-mono text-[9px] text-[#5a508f]" x-text="p.nip"></div>
+                                    <div class="text-[10px] text-slate-500 mt-0.5 line-clamp-1" x-text="p.jabatan"></div>
+                                </div>
+                                <span class="shrink-0 px-2 py-0.5 rounded-lg border text-[9px] uppercase tracking-wider font-extrabold"
+                                      :class="{
+                                          'bg-emerald-50 text-emerald-600 border-emerald-200': p.status_presensi === 'hadir',
+                                          'bg-amber-50 text-amber-600 border-amber-200': p.status_presensi === 'izin',
+                                          'bg-rose-50 text-rose-600 border-rose-200': p.status_presensi === 'sakit',
+                                          'bg-red-50 text-red-600 border-red-200': p.status_presensi === 'alfa',
+                                          'bg-slate-100 text-slate-400 border-slate-200': p.status_presensi === 'Belum Absen'
+                                      }"
+                                      x-text="p.status_presensi === 'Belum Absen' ? 'Belum Absen' : (p.status_presensi === 'alfa' ? 'Alfa' : p.status_presensi)">
+                                </span>
+                            </div>
+
+                            <!-- Baris Keterangan jika ada -->
+                            <template x-if="p.keterangan">
+                                <div class="bg-white border border-slate-200/80 rounded-xl p-2.5 text-[10px] text-slate-700 italic break-words break-all">
+                                    <span class="not-italic font-bold text-[9px] text-[#5a508f] block mb-0.5">Catatan:</span>
+                                    <span x-text="p.keterangan"></span>
+                                </div>
+                            </template>
+
+                            <!-- Baris Berkas Bukti & TTD -->
+                            <div class="flex items-center justify-between gap-2 pt-1 border-t border-[#d4d1f5]/40" x-show="p.surat_izin || p.tanda_tangan">
+                                <div class="min-w-0">
+                                    <template x-if="p.surat_izin">
+                                        <a :href="'/storage/' + p.surat_izin" target="_blank" 
+                                           class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-[#1b3bbb] border border-blue-200 rounded-lg text-[10px] font-bold not-italic transition-all shadow-2xs">
+                                            <svg class="w-3 h-3 text-[#1b3bbb] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            <span>Lihat Berkas</span>
+                                        </a>
+                                    </template>
+                                </div>
+                                <div class="shrink-0">
                                     <template x-if="p.tanda_tangan">
-                                        <div class="inline-flex items-center justify-center p-1 bg-white border border-slate-200 rounded-lg h-9 w-14 overflow-hidden shadow-sm">
+                                        <div class="inline-flex items-center justify-center p-1 bg-white border border-slate-200 rounded-lg h-7 w-14 overflow-hidden shadow-2xs">
                                             <img :src="'/storage/' + p.tanda_tangan" alt="TTD" class="max-h-full max-w-full object-contain">
                                         </div>
                                     </template>
-                                    <template x-if="!p.tanda_tangan">
-                                        <span class="text-slate-400">-</span>
-                                    </template>
-                                </td>
-                            </tr>
-                        </template>
-                        <tr x-show="detailParticipants.length === 0">
-                            <td colspan="5" class="py-6 text-center text-[#8e88dd] italic font-medium">Tidak ada pegawai terdaftar di bidang ini.</td>
-                        </tr>
-                    </tbody>
-                </table>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <div x-show="detailParticipants.length === 0" class="py-6 text-center text-[#8e88dd] italic text-xs font-medium">
+                        Tidak ada pegawai terdaftar di bidang ini.
+                    </div>
+                </div>
             </div>
             
             <div class="p-4 bg-[#f8f7ff] border-t border-[#d4d1f5]/40 flex justify-end">
@@ -1177,9 +1292,9 @@
     @endif
 
     <!-- MODAL: ISI PRESENSI MANDIRI DENGAN TTD -->
-    <div x-show="openAbsenModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm">
+    <div x-show="openAbsenModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-sm overflow-y-auto">
         <div @click.away="openAbsenModal = false" 
-             class="bg-white border border-[#d4d1f5]/60 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden relative text-[#2e2552]"
+             class="bg-white border border-[#d4d1f5]/60 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden relative text-[#2e2552] my-auto max-h-[92vh] flex flex-col"
              x-transition:enter="transition ease-out duration-300 transform"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100">
@@ -1196,7 +1311,7 @@
                 </button>
             </div>
 
-            <form action="{{ route('agenda.absen', $agenda->id) }}" method="POST" @submit="submitAbsen($event)" class="p-6 space-y-4">
+            <form action="{{ route('agenda.absen', $agenda->id) }}" method="POST" enctype="multipart/form-data" @submit="submitAbsen($event)" class="p-6 space-y-4 overflow-y-auto flex-1">
                 @csrf
                 
                 <!-- 1. Identitas Pegawai (Read-Only) -->
@@ -1255,18 +1370,38 @@
                     </div>
                 </div>
 
-                <!-- 3. Keterangan Catatan (Hanya untuk Izin) -->
-                <div class="space-y-1" x-show="status === 'izin'" x-transition>
+                <!-- 3. Keterangan Catatan (Untuk Izin & Sakit) -->
+                <div class="space-y-1" x-show="status === 'izin' || status === 'sakit'">
                     <label for="keterangan" class="block text-xs font-bold text-[#5a508f] uppercase">
-                        Alasan / Keterangan Izin <span class="text-rose-500">*</span>
+                        <span x-text="status === 'izin' ? 'Alasan / Keterangan Izin' : 'Alasan / Keterangan Sakit'"></span>
+                        <span class="text-rose-500">*</span>
                     </label>
-                    <textarea id="keterangan" name="keterangan" rows="2" x-model="keterangan" :required="status === 'izin'"
-                              placeholder="Masukkan alasan atau keterangan Anda mengambil izin..."
+                    <textarea id="keterangan" name="keterangan" rows="2" x-model="keterangan" :required="status === 'izin' || status === 'sakit'"
+                              :placeholder="status === 'izin' ? 'Masukkan alasan atau keterangan izin Anda' : 'Masukkan alasan atau keterangan sakit Anda'"
                               class="w-full px-4 py-2 bg-[#f3f2fe] border border-[#d4d1f5] rounded-2xl text-[#2e2552] text-sm focus:outline-none focus:ring-2 focus:ring-[#8e88dd]"></textarea>
                 </div>
 
-                <!-- 4. Canvas TTD Digital (Hanya untuk Hadir) -->
-                <div class="space-y-1" x-show="status === 'hadir'" x-transition>
+                <!-- 4. Upload Surat Bukti (Untuk Sakit & Izin) -->
+                <div class="space-y-1.5" x-show="status === 'izin' || status === 'sakit'">
+                    <label class="block text-xs font-bold text-[#5a508f] uppercase flex items-center justify-between">
+                        <span>
+                            <span x-text="status === 'sakit' ? 'Sertakan Bukti / Surat Dokter' : 'Sertakan Bukti / Surat Izin'"></span>
+                            <span class="text-rose-500">*</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-normal lowercase">(pdf, jpg, png maks 3mb)</span>
+                    </label>
+                    <input type="file" 
+                           :name="status === 'sakit' ? 'surat_dokter' : 'surat_izin'" 
+                           :id="status === 'sakit' ? 'surat_dokter' : 'surat_izin'" 
+                           :disabled="status === 'hadir'"
+                           accept=".pdf,.jpg,.jpeg,.png" 
+                           :required="status === 'sakit' || status === 'izin'"
+                           class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:cursor-pointer cursor-pointer border border-[#d4d1f5] rounded-2xl bg-[#f3f2fe] p-1.5 focus:outline-none transition-colors"
+                           :class="status === 'sakit' ? 'file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100' : 'file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100'">
+                </div>
+
+                <!-- 5. Canvas TTD Digital (Hanya untuk Hadir) -->
+                <div class="space-y-1" x-show="status === 'hadir'">
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold text-[#5a508f] uppercase">Tanda Tangan Digital <span class="text-rose-500">*</span></label>
                         <button type="button" @click="clearSignature" class="text-[10px] font-bold text-rose-600 hover:text-rose-800 transition-colors">
@@ -1845,6 +1980,37 @@
                         const sigInput = document.getElementById('signature-input');
                         if (sigInput) {
                             sigInput.value = this.signatureData;
+                        }
+                    } else if (this.status === 'sakit' || this.status === 'izin') {
+                        if (!this.keterangan || !this.keterangan.trim()) {
+                            e.preventDefault();
+                            let msg = this.status === 'sakit' 
+                                ? 'Alasan / keterangan sakit wajib diisi.' 
+                                : 'Alasan / keterangan izin wajib diisi.';
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({ text: msg, icon: 'warning', confirmButtonText: 'OK' });
+                            } else {
+                                alert(msg);
+                            }
+                            return;
+                        }
+                        const fileInput = document.getElementById(this.status === 'sakit' ? 'surat_dokter' : 'surat_izin');
+                        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                            e.preventDefault();
+                            let msg = this.status === 'sakit' 
+                                ? 'Surat keterangan / bukti dokter wajib dilampirkan jika memilih status Sakit.' 
+                                : 'Surat / bukti izin wajib dilampirkan jika memilih status Izin.';
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({ text: msg, icon: 'warning', confirmButtonText: 'OK' });
+                            } else {
+                                alert(msg);
+                            }
+                            return;
+                        }
+                        this.signatureData = '';
+                        const sigInput = document.getElementById('signature-input');
+                        if (sigInput) {
+                            sigInput.value = '';
                         }
                     } else {
                         this.signatureData = '';
