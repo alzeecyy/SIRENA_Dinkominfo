@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1080" width="100%" height="100%" style="background-color: #0f172a; font-family: 'Segoe UI', Arial, sans-serif;">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="750" y="40" text-anchor="middle" fill="#38bdf8" font-size="22" font-weight="bold">USE CASE DIAGRAM (6 AKTOR) - SIRENA AGENDARIS DINKOMINFO</text>
+
+  <!-- System Boundary -->
+  <rect x="230" y="70" width="1040" height="980" rx="16" fill="#1e293b" stroke="#38bdf8" stroke-width="2.5" filter="url(#shadow)"/>
+  <rect x="230" y="70" width="1040" height="45" rx="16" fill="#0284c7"/>
+  <text x="750" y="100" text-anchor="middle" fill="#ffffff" font-size="16" font-weight="bold">Sistem Informasi Agendaris (SIRENA) Dinkominfo</text>
+
+  <!-- LEFT ACTORS -->
+  <!-- 1. Administrator -->
+  <g transform="translate(60, 110)">
+    <circle cx="40" cy="20" r="16" fill="#f87171" stroke="#fca5a5" stroke-width="2"/>
+    <path d="M 40 36 L 40 75 M 15 50 L 65 50 M 40 75 L 20 110 M 40 75 L 60 110" stroke="#fca5a5" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="40" y="132" text-anchor="middle" fill="#f87171" font-size="13" font-weight="bold">Administrator</text>
+    <text x="40" y="148" text-anchor="middle" fill="#cbd5e1" font-size="11">(admin)</text>
+  </g>
+
+  <!-- 2. Admin Bidang / Admin Subbag -->
+  <g transform="translate(60, 480)">
+    <circle cx="40" cy="20" r="16" fill="#fbbf24" stroke="#fde047" stroke-width="2"/>
+    <path d="M 40 36 L 40 75 M 15 50 L 65 50 M 40 75 L 20 110 M 40 75 L 60 110" stroke="#fde047" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="40" y="132" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="bold">Admin Bidang/Subbag</text>
+    <text x="40" y="148" text-anchor="middle" fill="#cbd5e1" font-size="11">(sekretaris_bidang)</text>
+  </g>
+
+  <!-- 3. Staff -->
+  <g transform="translate(60, 830)">
+    <circle cx="40" cy="20" r="16" fill="#60a5fa" stroke="#93c5fd" stroke-width="2"/>
+    <path d="M 40 36 L 40 75 M 15 50 L 65 50 M 40 75 L 20 110 M 40 75 L 60 110" stroke="#93c5fd" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="40" y="132" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="bold">Staff Pegawai</text>
+    <text x="40" y="148" text-anchor="middle" fill="#cbd5e1" font-size="11">(staff)</text>
+  </g>
+
+  <!-- RIGHT ACTORS -->
+  <!-- 4. Kepala Dinas -->
+  <g transform="translate(1330, 110)">
+    <circle cx="40" cy="20" r="16" fill="#818cf8" stroke="#c7d2fe" stroke-width="2"/>
+    <path d="M 40 36 L 40 75 M 15 50 L 65 50 M 40 75 L 20 110 M 40 75 L 60 110" stroke="#c7d2fe" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="40" y="132" text-anchor="middle" fill="#818cf8" font-size="13" font-weight="bold">Kepala Dinas</text>
+    <text x="40" y="148" text-anchor="middle" fill="#cbd5e1" font-size="11">(ketua_master)</text>
+  </g>
+
+  <!-- 5. Sekretaris Dinas -->
+  <g transform="translate(1330, 480)">
+    <circle cx="40" cy="20" r="16" fill="#f472b6" stroke="#fbcfe8" stroke-width="2"/>
+    <path d="M 40 36 L 40 75 M 15 50 L 65 50 M 40 75 L 20 110 M 40 75 L 60 110" stroke="#fbcfe8" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="40" y="132" text-anchor="middle" fill="#f472b6" font-size="13" font-weight="bold">Sekretaris Dinas</text>
+    <text x="40" y="148" text-anchor="middle" fill="#cbd5e1" font-size="11">(sekretaris_master)</text>
+  </g>
+
+  <!-- 6. Kepala Bidang / Kasubag -->
+  <g transform="translate(1330, 830)">
+    <circle cx="40" cy="20" r="16" fill="#4ade80" stroke="#86efac" stroke-width="2"/>
+    <path d="M 40 36 L 40 75 M 15 50 L 65 50 M 40 75 L 20 110 M 40 75 L 60 110" stroke="#86efac" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="40" y="132" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="bold">Kabid / Kasubag</text>
+    <text x="40" y="148" text-anchor="middle" fill="#cbd5e1" font-size="11">(ketua_bidang)</text>
+  </g>
+
+  <!-- USE CASES (ELLIPSES) -->
+  <g filter="url(#shadow)">
+    <!-- Column 1: Staff & General (X: 350) -->
+    <!-- UC-01 -->
+    <line x1="120" y1="880" x2="260" y2="155" stroke="#60a5fa" stroke-width="1.2"/>
+    <ellipse cx="350" cy="155" rx="90" ry="24" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+    <text x="350" y="159" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-01: Login Sistem</text>
+
+    <!-- UC-02 -->
+    <line x1="120" y1="880" x2="260" y2="225" stroke="#60a5fa" stroke-width="1.2"/>
+    <ellipse cx="350" cy="225" rx="90" ry="24" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+    <text x="350" y="229" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-02: Ubah Pass &amp; Profil</text>
+
+    <!-- UC-03 -->
+    <line x1="120" y1="880" x2="255" y2="295" stroke="#60a5fa" stroke-width="1.2"/>
+    <ellipse cx="350" cy="295" rx="95" ry="24" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+    <text x="350" y="299" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-03: Dashboard &amp; Kalender</text>
+
+    <!-- UC-04 -->
+    <line x1="120" y1="880" x2="260" y2="365" stroke="#60a5fa" stroke-width="1.2"/>
+    <ellipse cx="350" cy="365" rx="90" ry="24" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+    <text x="350" y="369" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-04: Agenda Hari Ini</text>
+
+    <!-- UC-05 -->
+    <line x1="120" y1="880" x2="260" y2="435" stroke="#60a5fa" stroke-width="1.2"/>
+    <ellipse cx="350" cy="435" rx="90" ry="24" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+    <text x="350" y="439" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-05: Presensi Mandiri</text>
+
+    <!-- UC-06 -->
+    <line x1="120" y1="880" x2="255" y2="505" stroke="#60a5fa" stroke-width="1.2"/>
+    <ellipse cx="350" cy="505" rx="95" ry="24" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+    <text x="350" y="509" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-06: Riwayat &amp; Arsip</text>
+
+    <!-- UC-07 -->
+    <line x1="120" y1="880" x2="255" y2="575" stroke="#60a5fa" stroke-width="1.2"/>
+    <ellipse cx="350" cy="575" rx="95" ry="24" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+    <text x="350" y="579" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-07: Download PDF/DOCX</text>
+
+    <!-- Column 2: Admin & Sekretaris (X: 750) -->
+    <!-- UC-08 Admin Users -->
+    <line x1="120" y1="160" x2="655" y2="155" stroke="#f87171" stroke-width="1.5"/>
+    <ellipse cx="750" cy="155" rx="95" ry="24" fill="#7f1d1d" stroke="#dc2626" stroke-width="2"/>
+    <text x="750" y="159" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-08: Kelola User &amp; Akses</text>
+
+    <!-- UC-09 Admin Bidang -->
+    <line x1="120" y1="160" x2="655" y2="225" stroke="#f87171" stroke-width="1.5"/>
+    <ellipse cx="750" cy="225" rx="95" ry="24" fill="#7f1d1d" stroke="#dc2626" stroke-width="2"/>
+    <text x="750" y="229" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-09: Kelola Master Bidang</text>
+
+    <!-- UC-10 CRUD Agenda -->
+    <line x1="120" y1="530" x2="655" y2="505" stroke="#fbbf24" stroke-width="1.5"/>
+    <line x1="1350" y1="530" x2="845" y2="505" stroke="#f472b6" stroke-width="1.5"/>
+    <ellipse cx="750" cy="505" rx="95" ry="24" fill="#78350f" stroke="#d97706" stroke-width="2"/>
+    <text x="750" y="509" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-10: Kelola Data Agenda</text>
+
+    <!-- UC-11 Koreksi Presensi -->
+    <line x1="120" y1="530" x2="655" y2="575" stroke="#fbbf24" stroke-width="1.5"/>
+    <ellipse cx="750" cy="575" rx="95" ry="24" fill="#78350f" stroke="#d97706" stroke-width="2"/>
+    <text x="750" y="579" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-11: Koreksi Presensi</text>
+
+    <!-- UC-12 Edit Draft Notulensi -->
+    <line x1="120" y1="530" x2="655" y2="645" stroke="#fbbf24" stroke-width="1.5"/>
+    <line x1="1350" y1="530" x2="845" y2="645" stroke="#f472b6" stroke-width="1.5"/>
+    <ellipse cx="750" cy="645" rx="95" ry="24" fill="#78350f" stroke="#d97706" stroke-width="2"/>
+    <text x="750" y="649" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-12: Edit Draft Notulensi</text>
+
+    <!-- UC-13 Audio AI -->
+    <ellipse cx="350" cy="735" rx="95" ry="24" fill="#78350f" stroke="#d97706" stroke-width="2"/>
+    <text x="350" y="739" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-13: Transkripsi Audio AI</text>
+    <path d="M 445 735 Q 580 735 660 660" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrow)"/>
+    <text x="540" y="715" text-anchor="middle" fill="#fbbf24" font-size="10">&lt;&lt;extend&gt;&gt;</text>
+
+    <!-- UC-14 Peserta Eksternal -->
+    <ellipse cx="350" cy="805" rx="95" ry="24" fill="#78350f" stroke="#d97706" stroke-width="2"/>
+    <text x="350" y="809" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-14: Peserta Eksternal</text>
+    <path d="M 445 805 Q 620 805 680 665" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrow)"/>
+    <text x="560" y="775" text-anchor="middle" fill="#fbbf24" font-size="10">&lt;&lt;extend&gt;&gt;</text>
+
+    <!-- UC-15 Submit Review -->
+    <line x1="120" y1="530" x2="655" y2="715" stroke="#fbbf24" stroke-width="1.5"/>
+    <ellipse cx="750" cy="715" rx="95" ry="24" fill="#78350f" stroke="#d97706" stroke-width="2"/>
+    <text x="750" y="719" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-15: Submit Review</text>
+
+    <!-- Column 3: Pimpinan (Kabid, Sekdin, Kadin) (X: 1120) -->
+    <!-- UC-16 Review Notulensi -->
+    <line x1="1350" y1="880" x2="1215" y2="645" stroke="#4ade80" stroke-width="1.5"/>
+    <ellipse cx="1120" cy="645" rx="95" ry="24" fill="#14532d" stroke="#16a34a" stroke-width="2"/>
+    <text x="1120" y="649" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-16: Review Notulensi</text>
+
+    <!-- UC-17 Catat Revisi -->
+    <ellipse cx="1120" cy="725" rx="90" ry="24" fill="#14532d" stroke="#16a34a" stroke-width="2"/>
+    <text x="1120" y="729" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-17: Catat Revisi</text>
+    <line x1="1120" y1="701" x2="1120" y2="669" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrow)"/>
+    <text x="1155" y="690" text-anchor="middle" fill="#4ade80" font-size="10">&lt;&lt;extend&gt;&gt;</text>
+
+    <!-- UC-18 Approve Notulensi -->
+    <line x1="1350" y1="880" x2="1215" y2="805" stroke="#4ade80" stroke-width="1.5"/>
+    <line x1="1350" y1="530" x2="1215" y2="805" stroke="#f472b6" stroke-width="1.5"/>
+    <ellipse cx="1120" cy="805" rx="95" ry="24" fill="#14532d" stroke="#16a34a" stroke-width="2"/>
+    <text x="1120" y="809" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-18: Approve Notulensi</text>
+
+    <!-- UC-19 Monitoring Kadin -->
+    <line x1="1350" y1="160" x2="1215" y2="155" stroke="#818cf8" stroke-width="1.5"/>
+    <ellipse cx="1120" cy="155" rx="95" ry="24" fill="#312e81" stroke="#4f46e5" stroke-width="2"/>
+    <text x="1120" y="159" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="600">UC-19: Monitoring Dinas</text>
+  </g>
+</svg>

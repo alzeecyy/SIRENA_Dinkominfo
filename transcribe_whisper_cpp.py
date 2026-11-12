@@ -88,7 +88,6 @@ try:
         "-l", "id",     # Indonesian language
         "-ng",          # no GPU
         "-t", cpu_threads,
-        "--word-thold", "0.01",  # filter very low-confidence words
     ]
     
     result = subprocess.run(

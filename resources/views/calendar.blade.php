@@ -727,7 +727,10 @@
                         });
 
                         if (missingAdminBidangNames.length > 0) {
-                            this.adminValidationErrorMessage = "Pilih minimal 1 Admin dari unit yang diundang (" + missingAdminBidangNames.join(", ") + ").";
+                            let msg = "Pilih minimal 1 Admin dari unit yang diundang (" + missingAdminBidangNames.join(", ") + ").";
+                            this.adminValidationErrorMessage = msg;
+                            delete this.formErrors.participants;
+                            this.participantModalOpen = true;
                             this.$nextTick(() => {
                                 if (this.$refs.modalBody) {
                                     this.$refs.modalBody.scrollTo({ top: 0, behavior: "smooth" });
@@ -736,6 +739,7 @@
                             return false;
                         }
                         this.adminValidationErrorMessage = "";
+                        delete this.formErrors.participants;
                         return true;
                     },
 
