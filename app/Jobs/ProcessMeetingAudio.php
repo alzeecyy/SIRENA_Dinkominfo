@@ -16,6 +16,9 @@ class ProcessMeetingAudio implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public $tries = 1;
+    public $timeout = 600;
+
     protected $notulensi;
     protected $secretaryId;
     protected $specificAudioPath;
@@ -109,7 +112,7 @@ class ProcessMeetingAudio implements ShouldQueue
 
                             $audioBase64 = base64_encode(file_get_contents($audioFile));
 
-                            $sttResponse = Http::withoutVerifying()->timeout(120)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" . $apiKey, [
+                            $sttResponse = Http::withoutVerifying()->connectTimeout(5)->timeout((int) env('GEMINI_STT_TIMEOUT', 30))->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" . $apiKey, [
                                 'contents' => [
                                     [
                                         'parts' => [
@@ -120,7 +123,7 @@ class ProcessMeetingAudio implements ShouldQueue
                                                 ]
                                             ],
                                             [
-                                                'text' => "Transkripsikan percakapan suara dari audio rapat ini secara lengkap, rinci, dan akurat ke dalam Bahasa Indonesia baku. Tuliskan HANYA teks transkrip percakapan suara tanpa kata pengantar atau penjelasan tambahan."
+                                                'text' => "Transkripsikan percakapan suara dari audio rapat ini secara lengkap, rinci, dan akurat ke dalam Bahasa Indonesia baku. Tuliskan HANYA teks transkrip percakapan suara tanpa kata pengantar atau penjelasan tambahan. DILARANG mencantumkan label pembicara seperti 'Pria:', 'Wanita:', 'Speaker 1:', atau identitas jenis kelamin/gender apapun. Tuliskan langsung isi percakapannya saja."
                                             ]
                                         ]
                                     ]
@@ -224,30 +227,14 @@ class ProcessMeetingAudio implements ShouldQueue
                 Log::info("ProcessMeetingAudio: Transcript too short ({$textLen} chars). Skipped LLM summarization.");
             }
 
-            $prompt = "Role & Task:\n" .
-                      "Kamu adalah asisten sekretaris eksekutif profesional yang bertugas mengolah, merapikan, dan menyusun ulang catatan/transkrip mentah rapat menjadi dokumen notulensi rapat formal yang rapi dan terstruktur.\n\n" .
-                      "Aturan Penting (Strict Rules):\n" .
-                      "1. Faktual: Hanya gunakan informasi dari teks sumber. Dilarang menambah asumsi atau informasi palsu.\n" .
-                      "2. Tanpa Pembuka/Penutup: Berikan LANGSUNG dokumen dalam format Markdown tanpa kata pengantar (seperti 'Berikut adalah...') dan tanpa salam penutup.\n" .
-                      "3. Dilarang Menggunakan Kurung Siku Placeholder: JANGAN menuliskan label seperti '[Judul Topik]', '[Nama/Tidak disebutkan]', atau '[Keputusan]'. Tuliskan langsung kalimat faktual dari isi rapat.\n" .
-                      "4. Tanpa Emoji: Dilarang menggunakan emoji atau simbol emotikon.\n" .
-                      "5. JANGAN menuliskan judul utama '# RINGKASAN EKSEKUTIF RAPAT' atau 'RINGKASAN EKSEKUTIF RAPAT' di paling atas karena judul utama dokumen sudah disediakan oleh sistem.\n\n" .
-                      "Struktur Output Markdown:\n" .
-                      "(Tuliskan paragraf ringkasan singkat rapat secara padat, faktual, dan profesional dalam 1-2 paragraf)\n\n" .
-                      "**A. POIN-POIN PEMBAHASAN UTAMA**\n" .
-                      "(Tuliskan poin-poin pembahasan utama rapat dalam bentuk daftar berurutan atau bullet points)\n\n" .
-                      "**B. KEPUTUSAN & TINDAK LANJUT**\n" .
-                      "(Tuliskan poin-poin keputusan rapat beserta PIC dan tenggat waktu jika disebutkan)\n\n" .
-                      "**C. CATATAN & PERLU KLARIFIKASI**\n" .
-                      "(Tuliskan istilah ambigu/meragukan atau tulis 'Tidak ada' jika semua jelas)\n\n" .
-                      "Teks Sumber Catatan Rapat:\n\n" . $combinedTranscript;
+            $prompt = self::buildSummaryPrompt($combinedTranscript);
 
             // 1. Primary LLM Engine: Google Gemini API (Super fast response)
             if (!$summarized && $apiKey) {
                 try {
                     Log::info("ProcessMeetingAudio: calling Primary LLM Engine (Gemini API 3.6 Flash) to summarize...");
                     $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" . $apiKey;
-                    $responseSummary = Http::withoutVerifying()->timeout(120)->post($url, [
+                    $responseSummary = Http::withoutVerifying()->connectTimeout(5)->timeout((int) env('GEMINI_TIMEOUT', 10))->post($url, [
                         'contents' => [
                             [
                                 'parts' => [
@@ -258,8 +245,8 @@ class ProcessMeetingAudio implements ShouldQueue
                             ]
                         ],
                         'generationConfig' => [
-                            'temperature' => 0.3,
-                            'topP' => 0.9,
+                            'temperature' => 0.1,
+                            'topP' => 0.8,
                         ]
                     ]);
                     
@@ -269,6 +256,7 @@ class ProcessMeetingAudio implements ShouldQueue
                         if ($sumText) {
                             $sumText = trim(preg_replace('/```(?:markdown)?/i', '', $sumText));
                             $sumText = self::cleanRepetitiveLoops($sumText);
+                            $sumText = self::fixMarkdownFormat($sumText);
                             $this->notulensi->update([
                                 'transkrip_raw' => $combinedTranscript,
                                 'ringkasan' => $sumText,
@@ -293,7 +281,7 @@ class ProcessMeetingAudio implements ShouldQueue
             // 2. Fallback LLM Engine: Custom OpenAI-compatible API / Local Qwen 2.5 (If offline or Gemini failed)
             $llmApiBase = env('LLM_API_BASE');
             $llmApiKey = env('LLM_API_KEY', 'none');
-            $llmModel = env('LLM_MODEL', 'qwen2.5:1.5b');
+            $llmModel = env('LLM_MODEL', 'qwen2.5:3b');
 
             if (!$summarized && $llmApiBase) {
                 try {
@@ -304,12 +292,16 @@ class ProcessMeetingAudio implements ShouldQueue
                         'Content-Type' => 'application/json'
                     ])->post($url, [
                         'model' => $llmModel,
-                        'temperature' => 0.4,
-                        'top_p' => 0.9,
-                        'frequency_penalty' => 0.5,
-                        'presence_penalty' => 0.3,
+                        'temperature' => 0.1,
+                        'top_p' => 0.8,
+                        'frequency_penalty' => 0.3,
+                        'presence_penalty' => 0.2,
                         'max_tokens' => 3000,
                         'messages' => [
+                            [
+                                'role' => 'system',
+                                'content' => 'Kamu adalah asisten sekretaris notulensi rapat yang sangat teliti, objektif, dan faktual. Kamu dilarang keras mengarang atau menambahkan informasi fiktif yang tidak ada di transkrip rapat.'
+                            ],
                             [
                                 'role' => 'user',
                                 'content' => $prompt
@@ -323,18 +315,23 @@ class ProcessMeetingAudio implements ShouldQueue
                         if ($sumText) {
                             $sumText = trim(preg_replace('/```(?:markdown)?/i', '', $sumText));
                             $sumText = self::cleanRepetitiveLoops($sumText);
-                            $this->notulensi->update([
-                                'transkrip_raw' => $combinedTranscript,
-                                'ringkasan' => $sumText,
-                                'pembahasan' => null,
-                                'keputusan' => null,
-                                'kesimpulan' => null,
-                                'transkrip_error' => null,
-                                'last_edited_by_id' => $this->secretaryId,
-                                'status' => 'draft'
-                            ]);
-                            $summarized = true;
-                            Log::info("ProcessMeetingAudio completed and summarized via Fallback LLM Engine ({$llmModel}) successfully.");
+                            if (self::isRepetitiveLoop($sumText)) {
+                                Log::warning("ProcessMeetingAudio: Fallback LLM ({$llmModel}) output detected as repetition loop. Discarding.");
+                            } else {
+                                $sumText = self::fixMarkdownFormat($sumText);
+                                $this->notulensi->update([
+                                    'transkrip_raw' => $combinedTranscript,
+                                    'ringkasan' => $sumText,
+                                    'pembahasan' => null,
+                                    'keputusan' => null,
+                                    'kesimpulan' => null,
+                                    'transkrip_error' => null,
+                                    'last_edited_by_id' => $this->secretaryId,
+                                    'status' => 'draft'
+                                ]);
+                                $summarized = true;
+                                Log::info("ProcessMeetingAudio completed and summarized via Fallback LLM Engine ({$llmModel}) successfully.");
+                            }
                         }
                     } else {
                         Log::error("ProcessMeetingAudio: Fallback LLM API request failed with status: " . $response->status() . " Body: " . $response->body());
@@ -481,9 +478,153 @@ class ProcessMeetingAudio implements ShouldQueue
         return trim($text);
     }
 
+    /**
+     * Bangun prompt summarization terstandar untuk semua LLM (Primary Gemini & Fallback Lokal).
+     */
+    public static function buildSummaryPrompt(string $transcript): string
+    {
+        return "Kamu adalah sekretaris rapat profesional. Rangkum teks transkrip berikut menjadi notulensi Markdown yang rapi, faktual, dan mudah dibaca.\n\n" .
+               "ATURAN WAJIB:\n" .
+               "1. HANYA gunakan fakta dari transkrip. DILARANG mengarang PIC, tanggal, keputusan, contoh fiktif, atau mengutip '(Teks asli: ...)'.\n" .
+               "2. Langsung mulai dengan paragraf ringkasan pembuka di baris pertama dari sudut pandang notulensi rapat (misalnya 'Rapat ini membahas...' atau langsung uraikan topiknya). DILARANG menulis 'Teks ini membahas...', 'Transkrip ini...', kalimat pengantar ('Berikut adalah...'), salam penutup, emoji, garis '---', atau judul '#' di paling atas.\n" .
+               "3. Wajib cantumkan semua 4 bagian berikut secara berurutan:\n" .
+               "   - Bagian pembuka: langsung tulis 1 paragraf ringkasan umum (3-5 kalimat) mengenai inti pembahasan rapat.\n" .
+               "   - **A. POIN-POIN PEMBAHASAN UTAMA**: tulis daftar bernomor bulat 1., 2., 3., dst. (bukan 1.0). Pada setiap butir, tuliskan frasa inti pembahasannya secara tebal diikuti tanda titik dua lalu penjelasan lengkapnya dari transkrip.\n" .
+               "   - **B. KEPUTUSAN & TINDAK LANJUT**: tulis keputusan yang disepakati jika ada; jika tidak ada, tulis persis: Belum ada keputusan atau tindak lanjut spesifik yang ditetapkan dalam percakapan ini.\n" .
+               "   - **C. CATATAN & PERLU KLARIFIKASI**: periksa transkrip untuk mencari kata yang typo, ejaan tidak baku (misalnya serapan yang salah eja), atau kata salah dengar transkripsi suara STT, lalu tulis maksimal 5 butir dengan tanda '-' beserta saran ejaan/kata yang benar. Jangan mengulang kata yang sama. Jika semua sudah baku dan jelas, tulis: Tidak ada.\n\n" .
+               "Teks Sumber Transkrip:\n\n" . $transcript;
+    }
+
+    /**
+     * Perbaiki format Markdown output LLM agar rapi dan selalu lengkap:
+     * - Hapus heading '# ...' di awal dokumen yang tidak perlu
+     * - Pastikan header section **A. / **B. / **C. terpisah rapi dengan baris kosong
+     * - Pastikan item bernomor (1. 2. 3.) mulai di baris baru tanpa spasi di awal
+     * - Pastikan bagian B dan C selalu ada jika terpotong oleh model kecil
+     */
+    public static function fixMarkdownFormat(string $text): string
+    {
+        if (empty($text)) return '';
+
+        // Normalisasi line endings
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+
+        // Hapus garis pemisah '---' / '***' atau heading '#' di awal dokumen
+        $text = preg_replace('/^\s*(?:[-*_]{3,}|#{1,3}\s*[^\n]*(?:notulensi|ringkasan|risalah)[^\n]*)\s*\n+/iu', '', $text);
+
+        // Normalisasi penomoran desimal seperti "1.0 ", "2.0 " menjadi "1. ", "2. "
+        $text = preg_replace('/(^|\n)[ \t]*(\d{1,2})\.0([ \t]+)/u', '$1$2.$3', $text);
+
+        // Normalisasi header Markdown seperti "## A. POIN..." menjadi "**A. POIN...**"
+        $text = preg_replace('/^[ \t]*#{1,4}[ \t]+([A-C]\.\s+[^\n#*]+)\s*$/mu', '**$1**', $text);
+
+        // Pastikan section header **A. / **B. / **C. berdiri di baris sendiri dengan jarak 2 newline sebelum & sesudahnya
+        $text = preg_replace('/\s*(\*\*[A-C]\.\s+[A-Z][^\n*]+\*\*)\s*/u', "\n\n$1\n\n", $text);
+
+        // Pastikan item bernomor (1. 2. 3. dst) setelah tanda baca akhir kalimat atau baris sebelumnya mulai di baris baru tanpa spasi depan
+        $text = preg_replace('/(?<=[.!?:)"\'])[ \t]+(\d{1,2}\.\s+)/u', "\n$1", $text);
+
+        // Hapus spasi/tab berlebih di awal baris sebelum angka bernomor (" 2. " -> "2. ")
+        $text = preg_replace('/^[ \t]+(\d{1,2}\.\s+)/m', '$1', $text);
+
+        // Pastikan item bullet ("- kata") setelah kalimat baru mulai di baris baru tanpa spasi depan
+        $text = preg_replace('/(?<=[.!?:)"\'])[ \t]+(-\s+)/u', "\n$1", $text);
+        $text = preg_replace('/^[ \t]+(-\s+)/m', '$1', $text);
+
+        // Safety net: pastikan bagian B dan C selalu ada jika model kecil memotongnya
+        if (!preg_match('/\*\*B\.\s+KEPUTUSAN/i', $text)) {
+            $text = rtrim($text) . "\n\n**B. KEPUTUSAN & TINDAK LANJUT**\n\nBelum ada keputusan atau tindak lanjut spesifik yang ditetapkan dalam percakapan ini.";
+        }
+        if (!preg_match('/\*\*C\.\s+CATATAN/i', $text)) {
+            $text = rtrim($text) . "\n\n**C. CATATAN & PERLU KLARIFIKASI**\n\nTidak ada.";
+        }
+
+        // Rapikan: maksimal 2 baris kosong berturut-turut
+        $text = preg_replace('/\n{3,}/', "\n\n", $text);
+
+        return trim($text);
+    }
+
+    /**
+     * Deteksi apakah teks mengandung repetition loop parah (LLM hallucination).
+     * Return true jika teks tidak layak dipakai.
+     */
+    public static function isRepetitiveLoop(string $text): bool
+    {
+        if (empty($text)) return false;
+
+        // 1. Cek repetisi per baris (menangkap loop seperti "- PostgreSQL" berulang kali)
+        $lines = array_values(array_filter(array_map('trim', explode("\n", $text)), fn($l) => strlen($l) > 3));
+        $totalLines = count($lines);
+        if ($totalLines >= 6) {
+            $lineFreq = array_count_values($lines);
+            $maxLineRepeat = max($lineFreq);
+            if ($maxLineRepeat >= 5 || ($maxLineRepeat / $totalLines) > 0.3) {
+                return true;
+            }
+        }
+
+        // 2. Cek repetisi per kalimat
+        $sentences = preg_split('/(?<=[.!?])\s+/', trim($text));
+        $sentences = array_filter(array_map('trim', $sentences), fn($s) => strlen($s) > 5);
+        $sentences = array_values($sentences);
+
+        $total = count($sentences);
+        if ($total < 5) return false;
+
+        $freq = array_count_values($sentences);
+        $maxRepeat = max($freq);
+
+        if ($maxRepeat / $total > 0.3) return true;
+
+        if ($total > 20) {
+            $tail = array_slice($sentences, -20);
+            $tailFreq = array_count_values($tail);
+            if (max($tailFreq) >= 10) return true;
+        }
+
+        return false;
+    }
+
     public static function cleanRepetitiveLoops(string $text): string
     {
         if (empty($text)) return '';
+
+        // 1. Deduplikasi per baris sambil mempertahankan struktur newline
+        $rawLines = explode("\n", str_replace(["\r\n", "\r"], "\n", $text));
+        $seenLines = [];
+        $dedupedLines = [];
+        foreach ($rawLines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '') {
+                $dedupedLines[] = '';
+                continue;
+            }
+            $key = mb_strtolower($trimmed);
+            $seenLines[$key] = ($seenLines[$key] ?? 0) + 1;
+            if ($seenLines[$key] <= 1) {
+                $dedupedLines[] = $line;
+            }
+        }
+        $text = implode("\n", $dedupedLines);
+
+        // 2. Hapus pengulangan kalimat pada baris yang sama tanpa merusak newline
+        $finalLines = [];
+        foreach (explode("\n", $text) as $line) {
+            $sentences = preg_split('/(?<=[.!?])[ \t]+/', trim($line));
+            $seen = [];
+            $deduped = [];
+            foreach ($sentences as $sentence) {
+                $key = mb_strtolower(trim($sentence));
+                if ($key === '') continue;
+                $seen[$key] = ($seen[$key] ?? 0) + 1;
+                if ($seen[$key] <= 2) {
+                    $deduped[] = $sentence;
+                }
+            }
+            $finalLines[] = implode(' ', $deduped);
+        }
+        $text = implode("\n", $finalLines);
 
         // Hapus pengulangan frasa berulang (misal "untuk mempertimbangkan untuk mempertimbangkan...")
         $cleaned = preg_replace('/(?:\b(\w+(?:\s+\w+){0,9})\b)(?:\s+\1){2,}/iu', '$1', $text);

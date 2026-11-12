@@ -20,9 +20,9 @@ if not os.path.exists(audio_path):
 # Temp WAV file path
 temp_wav = audio_path + ".temp_16k.wav"
 
-# Select best available model: small > base > tiny
+# Select best available model: small-q5_1 > small > base > tiny
 whisper_dir = os.path.join(os.path.dirname(__file__), "whisper-bin")
-model_candidates = ["ggml-small.bin", "ggml-base.bin", "ggml-tiny.bin"]
+model_candidates = ["ggml-small-q5_1.bin", "ggml-small.bin", "ggml-base-q5_1.bin", "ggml-base.bin", "ggml-tiny.bin"]
 model_bin = None
 for candidate in model_candidates:
     candidate_path = os.path.join(whisper_dir, candidate)
@@ -74,10 +74,10 @@ try:
     if main_exe is None:
         raise FileNotFoundError(f"whisper.cpp executable not found in any of the expected locations: {possible_exes}")
 
-    # Use fewer threads to reduce memory pressure
+    # Cap at 8 threads to avoid E-core / SMT contention on hybrid CPUs
     # Use beam search (default bs=5) for better accuracy - do NOT use bs=1 (greedy, very inaccurate)
     # -ng: no GPU, -nfa: no flash attention, -l id: Indonesian language
-    cpu_threads = str(max(4, (os.cpu_count() or 4) - 2))
+    cpu_threads = str(min(8, max(4, (os.cpu_count() or 4) - 2)))
     cmd = [
         main_exe,
         "-m", model_bin,

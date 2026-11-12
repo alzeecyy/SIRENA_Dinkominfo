@@ -125,7 +125,7 @@ class NotulensiController extends Controller
         // Release session lock immediately so user can navigate to other pages without being blocked!
         session()->save();
 
-        ProcessMeetingAudio::dispatchAfterResponse($notulensi, $user->id);
+        ProcessMeetingAudio::dispatch($notulensi, $user->id);
 
         return back()->with('success', 'Proses transkripsi AI telah dimulai. Mohon tunggu sejenak...');
     }
@@ -708,12 +708,23 @@ class NotulensiController extends Controller
             ];
         }
 
-        // Convert Banyumas logo to base64 for document rendering compatibility
+        // Prepare Banyumas logo for document rendering
         $logoPath = public_path('images/logo-banyumas.png');
-        $logoBase64 = '';
-        if (file_exists($logoPath)) {
-            $logoData = file_get_contents($logoPath);
-            $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        $hasLogo = file_exists($logoPath);
+        $logoRawBase64 = $hasLogo ? base64_encode(file_get_contents($logoPath)) : '';
+
+        // Prepare digital signature if available
+        $hasTtd = false;
+        $ttdRawBase64 = '';
+        if (!empty($notulensi->tanda_tangan_approver)) {
+            $ttdData = $notulensi->tanda_tangan_approver;
+            if (str_starts_with($ttdData, 'data:image')) {
+                $parts = explode(',', $ttdData);
+                if (isset($parts[1])) {
+                    $ttdRawBase64 = $parts[1];
+                    $hasTtd = true;
+                }
+            }
         }
 
         // Pre-render Markdown to HTML and clean full-paragraph <strong> wrappers for clean regular-weight export
@@ -737,11 +748,42 @@ class NotulensiController extends Controller
         $approverInfo = $this->getApproverSignatureInfo($agenda, $notulensi);
 
         // Generate clean document layout
-        $viewContent = view('notulensi.export_docx', compact('agenda', 'notulensi', 'attendees', 'recap', 'logoBase64', 'approverInfo'))->render();
+        $viewContent = view('notulensi.export_docx', compact('agenda', 'notulensi', 'attendees', 'recap', 'hasLogo', 'hasTtd', 'approverInfo'))->render();
         
+        // Package as self-contained MHTML so Microsoft Word natively renders embedded logo and double borders
+        $boundary = "----=_NextPart_Agendaris_" . md5($agenda->id . '_' . time());
+        $mhtml = "MIME-Version: 1.0\r\n";
+        $mhtml .= "Content-Type: multipart/related; boundary=\"{$boundary}\"\r\n\r\n";
+
+        // Main HTML Part
+        $mhtml .= "--{$boundary}\r\n";
+        $mhtml .= "Content-Type: text/html; charset=\"utf-8\"\r\n";
+        $mhtml .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
+        $mhtml .= $viewContent . "\r\n\r\n";
+
+        // Embedded Logo Part
+        if ($hasLogo) {
+            $mhtml .= "--{$boundary}\r\n";
+            $mhtml .= "Content-Type: image/png\r\n";
+            $mhtml .= "Content-Transfer-Encoding: base64\r\n";
+            $mhtml .= "Content-Location: logo-banyumas.png\r\n\r\n";
+            $mhtml .= chunk_split($logoRawBase64) . "\r\n";
+        }
+
+        // Embedded TTD Approver Part
+        if ($hasTtd) {
+            $mhtml .= "--{$boundary}\r\n";
+            $mhtml .= "Content-Type: image/png\r\n";
+            $mhtml .= "Content-Transfer-Encoding: base64\r\n";
+            $mhtml .= "Content-Location: ttd-approver.png\r\n\r\n";
+            $mhtml .= chunk_split($ttdRawBase64) . "\r\n";
+        }
+
+        $mhtml .= "--{$boundary}--\r\n";
+
         $filename = 'notulensi-rapat-' . $agenda->id . '.doc';
 
-        return response($viewContent)
+        return response($mhtml)
             ->header('Content-Type', 'application/msword')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
@@ -850,27 +892,14 @@ class NotulensiController extends Controller
 
         $apiKey = env('GEMINI_API_KEY');
 
-        $promptText = "Role & Task:\n" .
-                      "Kamu adalah asisten sekretaris eksekutif profesional yang bertugas mengolah, merapikan, dan menyusun ulang catatan/transkrip mentah rapat menjadi dokumen notulensi rapat formal yang rapi dan terstruktur.\n\n" .
-                      "Aturan Penting (Strict Rules):\n" .
-                      "1. Faktual: Hanya gunakan informasi dari teks sumber. Dilarang menambah asumsi atau informasi palsu.\n" .
-                      "2. Tanpa Pembuka/Penutup: Berikan LANGSUNG dokumen dalam format Markdown tanpa kata pengantar (seperti 'Berikut adalah...') dan tanpa salam penutup.\n" .
-                      "3. Dilarang Menggunakan Kurung Siku Placeholder: JANGAN menuliskan label seperti '[Judul Topik]', '[Nama/Tidak disebutkan]', atau '[Keputusan]'. Tuliskan langsung kalimat faktual dari isi rapat.\n" .
-                      "4. Tanpa Emoji: Dilarang menggunakan emoji atau simbol emotikon.\n" .
-                      "5. JANGAN menuliskan judul utama '# RINGKASAN EKSEKUTIF RAPAT' atau 'RINGKASAN EKSEKUTIF RAPAT' di paling atas karena judul utama dokumen sudah disediakan oleh sistem.\n\n" .
-                      "Struktur Output Markdown:\n" .
-                      "(Tuliskan paragraf ringkasan singkat rapat secara padat, faktual, dan profesional dalam 1-2 paragraf)\n\n" .
-                      "**A. POIN-POIN PEMBAHASAN UTAMA**\n" .
-                      "(Tuliskan poin-poin pembahasan utama rapat dalam bentuk daftar berurutan atau bullet points)\n\n" .
-                      "**B. KEPUTUSAN & TINDAK LANJUT**\n" .
-                      "(Tuliskan poin-poin keputusan rapat beserta PIC dan tenggat waktu jika disebutkan)\n\n" .
-                      "**C. CATATAN & PERLU KLARIFIKASI**\n" .
-                      "(Tuliskan istilah ambigu/meragukan atau tulis 'Tidak ada' jika semua jelas)\n\n" .
-                      "Teks Sumber Catatan Rapat:\n\n" . $transcript;
+        $promptText = \App\Jobs\ProcessMeetingAudio::buildSummaryPrompt($transcript);
 
         if ($apiKey) {
             try {
-                $response = \Illuminate\Support\Facades\Http::withoutVerifying()->timeout(120)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" . $apiKey, [
+                $response = \Illuminate\Support\Facades\Http::withoutVerifying()
+                    ->connectTimeout(5)
+                    ->timeout((int) env('GEMINI_TIMEOUT', 10))
+                    ->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" . $apiKey, [
                     'contents' => [
                         [
                             'parts' => [
@@ -881,8 +910,8 @@ class NotulensiController extends Controller
                         ]
                     ],
                     'generationConfig' => [
-                        'temperature' => 0.3,
-                        'topP' => 0.9,
+                        'temperature' => 0.1,
+                        'topP' => 0.8,
                     ]
                 ]);
 
@@ -892,10 +921,15 @@ class NotulensiController extends Controller
                     if ($text) {
                         $cleanText = trim(preg_replace('/```(?:markdown)?/i', '', $text));
                         $cleanText = \App\Jobs\ProcessMeetingAudio::cleanRepetitiveLoops($cleanText);
-                        return response()->json([
-                            'status' => 'success',
-                            'data' => $cleanText
-                        ]);
+                        if (\App\Jobs\ProcessMeetingAudio::isRepetitiveLoop($cleanText)) {
+                            \Illuminate\Support\Facades\Log::warning("regenerate(): Fallback LLM ({$llmModel}) output detected as repetition loop. Discarding.");
+                        } else {
+                            $cleanText = \App\Jobs\ProcessMeetingAudio::fixMarkdownFormat($cleanText);
+                            return response()->json([
+                                'status' => 'success',
+                                'data' => $cleanText
+                            ]);
+                        }
                     }
                 } else {
                     \Illuminate\Support\Facades\Log::error('Gemini API HTTP error (' . $response->status() . '): ' . $response->body());
@@ -907,7 +941,7 @@ class NotulensiController extends Controller
 
         // Fallback 1: try local Ollama/OpenAI-compatible LLM API
         $llmApiBase = env('LLM_API_BASE');
-        $llmModel = env('LLM_MODEL', 'qwen2.5:1.5b');
+        $llmModel = env('LLM_MODEL', 'qwen2.5:3b');
         $llmApiKey = env('LLM_API_KEY', 'none');
 
         if ($llmApiBase) {
@@ -918,12 +952,16 @@ class NotulensiController extends Controller
                     'Content-Type' => 'application/json',
                 ])->post($url, [
                     'model' => $llmModel,
-                    'temperature' => 0.4,
-                    'top_p' => 0.9,
-                    'frequency_penalty' => 0.5,
-                    'presence_penalty' => 0.3,
+                    'temperature' => 0.1,
+                    'top_p' => 0.8,
+                    'frequency_penalty' => 0.3,
+                    'presence_penalty' => 0.2,
                     'max_tokens' => 3000,
                     'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'Kamu adalah asisten sekretaris notulensi rapat yang sangat teliti, objektif, dan faktual. Kamu dilarang keras mengarang atau menambahkan informasi fiktif yang tidak ada di transkrip rapat.'
+                        ],
                         [
                             'role' => 'user',
                             'content' => $promptText
@@ -937,10 +975,15 @@ class NotulensiController extends Controller
                     if ($text) {
                         $cleanText = trim(preg_replace('/```(?:markdown)?/i', '', $text));
                         $cleanText = \App\Jobs\ProcessMeetingAudio::cleanRepetitiveLoops($cleanText);
-                        return response()->json([
-                            'status' => 'success',
-                            'data' => $cleanText
-                        ]);
+                        if (\App\Jobs\ProcessMeetingAudio::isRepetitiveLoop($cleanText)) {
+                            \Illuminate\Support\Facades\Log::warning("regenerate(): Fallback LLM ({$llmModel}) output detected as repetition loop. Discarding.");
+                        } else {
+                            $cleanText = \App\Jobs\ProcessMeetingAudio::fixMarkdownFormat($cleanText);
+                            return response()->json([
+                                'status' => 'success',
+                                'data' => $cleanText
+                            ]);
+                        }
                     }
                 } else {
                     \Illuminate\Support\Facades\Log::error('Ollama HTTP error: ' . $llmResponse->status() . ' - ' . $llmResponse->body());
